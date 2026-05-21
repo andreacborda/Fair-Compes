@@ -120,6 +120,36 @@ const T = {
     tableHeaders:["#","COMPANY","PRICE","PREVIOUS","VARIATION","vs AVERAGE","SHARE","COMPLAINTS"],
     prev:"Previous", current:"Current", devFromAvg:"Dev. from avg", complaints:"Complaints", selected:"selected",
     allCompaniesLabel:"All companies",
+    products:{
+      "Gasolina Regular":"Regular Gasoline","Gasolina Premium":"Premium Gasoline",
+      "ACPM / Diésel":"Diesel Fuel","Gas Natural":"Natural Gas",
+      "Energía Eléctrica":"Electric Power","Carbón":"Coal","Etanol":"Ethanol",
+      "Gas Licuado (GLP)":"LPG Gas","Internet Hogar 100Mbps":"Home Internet 100Mbps",
+      "Internet Hogar 300Mbps":"Home Internet 300Mbps","Internet Hogar 1Gbps":"Home Internet 1Gbps",
+      "Telefonía Móvil Postpago":"Postpaid Mobile","Telefonía Móvil Prepago":"Prepaid Mobile",
+      "TV por Suscripción":"Subscription TV","Telefonía Fija":"Landline Phone",
+      "Roaming Internacional":"International Roaming","Pollo Entero":"Whole Chicken",
+      "Carne de Res (kg)":"Beef (kg)","Aceite Vegetal 1L":"Vegetable Oil 1L",
+      "Leche 1L":"Milk 1L","Arroz 1kg":"Rice 1kg","Pan Tajado":"Sliced Bread",
+      "Huevos (docena)":"Eggs (dozen)","Azúcar 1kg":"Sugar 1kg",
+      "Harina de Trigo 1kg":"Wheat Flour 1kg","Café Molido 500g":"Ground Coffee 500g",
+      "Seguro Auto Básico":"Basic Auto Insurance","Seguro Auto Todo Riesgo":"Full Coverage Auto Insurance",
+      "Seguro de Vida":"Life Insurance","SOAT / Seguro Obligatorio":"Mandatory Insurance",
+      "Seguro de Hogar":"Home Insurance","Seguro de Salud":"Health Insurance",
+      "Seguro Empresarial":"Business Insurance","Seguro de Viaje":"Travel Insurance",
+      "Acetaminofén 500mg":"Acetaminophen 500mg","Ibuprofeno 400mg":"Ibuprofen 400mg",
+      "Amoxicilina 500mg":"Amoxicillin 500mg","Omeprazol 20mg":"Omeprazole 20mg",
+      "Metformina 850mg":"Metformin 850mg","Atorvastatina 20mg":"Atorvastatin 20mg",
+      "Losartán 50mg":"Losartan 50mg","Vitamina C 1000mg":"Vitamin C 1000mg",
+      "Taxi / Cabify km":"Taxi / Rideshare km","Servicio de Bus":"Bus Service",
+      "Vuelo Doméstico":"Domestic Flight","Vuelo Internacional":"International Flight",
+      "Peaje Autopista":"Highway Toll","Servicio de Metro":"Metro Service",
+      "Transporte de Carga":"Freight Transport","Mensajería Express":"Express Delivery",
+      "Cuenta de Ahorros":"Savings Account","Tarjeta de Crédito":"Credit Card",
+      "Crédito de Consumo":"Consumer Loan","Crédito Hipotecario":"Mortgage Loan",
+      "Comisión Transferencia":"Transfer Fee","CDT / Depósito a Plazo":"Time Deposit",
+      "Seguro de Depósitos":"Deposit Insurance","Nómina Empresarial":"Corporate Payroll",
+    },
     aiPrompt:(product,region,country,unit,data,analysis,lf)=>`You are an expert in competition law. Analyze the following market data under the legal framework of ${country}:\n\nJURISDICTION: ${country}\nAUTHORITY: ${lf.authority}\nLEGAL FRAMEWORK: ${lf.law}\nPRODUCT: ${product} | TERRITORY: ${region} | UNIT: ${unit}\n\nDATA:\n${data.map(d=>`- ${d.company}: ${d.price.toLocaleString()} (prev: ${d.prevPrice.toLocaleString()}, var: ${(((d.price-d.prevPrice)/d.prevPrice)*100).toFixed(1)}%, share: ${d.marketShare}%)`).join("\n")}\n\nSTATISTICS:\n- Dispersion: ${analysis.variancePct?.toFixed(2)}%\n- Variation: ${analysis.changePct?.toFixed(1)}%\n- Risk: ${analysis.risk?.level} (${analysis.risk?.score}/100)\n- Alerts: ${analysis.alerts?.map(a=>a.type).join(", ")||"None"}\n\nGenerate a complete technical-legal opinion with:\n1. ECONOMIC DIAGNOSIS of the market (2 paragraphs)\n2. IDENTIFIED PRACTICES with exact articles from ${lf.law}\n3. PROBABILITY OF INFRINGEMENT for each detected practice\n4. INVESTIGATION RECOMMENDATIONS prioritized for ${lf.authority}\n5. APPLICABLE SANCTIONS with specific amounts under ${lf.law}\n\nBe specific and technical. Use appropriate legal terminology.`,
   },
 };
@@ -472,7 +502,7 @@ function FilterPanel({filters,onChange,t}){
           {Object.keys(MARKETS).map(m=><option key={m} value={m}>{t.markets[m]||m}</option>)}
         </select>
       </div>
-      <div><L c={t.product}/><Sel value={product} opts={products} k="product"/></div>
+      <div><L c={t.product}/><select value={product} onChange={e=>sel("product",e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>{products.map(p=><option key={p} value={p}>{t.products?.[p]||p}</option>)}</select></div>
       {/* FIX #2: Company dropdown always uses real company names */}
       <div>
         <L c={t.company}/>
@@ -576,15 +606,17 @@ function RiskPanel({analysis,onGoToAlerts,country,t}){
   </div>;
 }
 
-// FIX #3: AI Analysis now shows full response including recommendations
+// AI Analysis - fixed error handling and product name translation
 function AIAnalysis({data,analysis,product,country,region,unit,t}){
   const [text,setText]=useState("");
   const [loading,setLoading]=useState(false);
+  const [error,setError]=useState("");
   const lf=LEGAL[country]||LEGAL["Colombia"];
+  const displayProduct=t.products?.[product]||product;
   const Dot=({delay})=><span style={{width:7,height:7,borderRadius:"50%",background:C.gold,display:"inline-block",animation:`pulse 1.2s ease-in-out ${delay}s infinite`}}/>;
   const run=async()=>{
     if(!data.length)return;
-    setLoading(true);setText("");
+    setLoading(true);setText("");setError("");
     const prompt=t.aiPrompt(product,region,country,unit,data,analysis,lf);
     try{
       const res=await fetch("https://api.anthropic.com/v1/messages",{
@@ -596,11 +628,18 @@ function AIAnalysis({data,analysis,product,country,region,unit,t}){
           messages:[{role:"user",content:prompt}]
         })
       });
+      if(!res.ok){
+        const errData=await res.json().catch(()=>({}));
+        throw new Error(errData?.error?.message||`HTTP ${res.status}`);
+      }
       const d=await res.json();
-      const fullText=d.content?.map(b=>b.text||"").join("")||"Error obtaining analysis.";
+      if(d.error){throw new Error(d.error.message||"API error");}
+      const fullText=d.content?.map(b=>b.text||"").join("")||"";
+      if(!fullText){throw new Error("Empty response from API");}
       setText(fullText);
-    }catch{setText("Connection error. Please try again.");}
-    finally{setLoading(false);}
+    }catch(e){
+      setError(e.message||"Connection error. Please try again.");
+    }finally{setLoading(false);}
   };
   return<div>
     <SectionTitle>{t.aiAnalysis}</SectionTitle>
@@ -615,12 +654,14 @@ function AIAnalysis({data,analysis,product,country,region,unit,t}){
         {loading?<><span style={{display:"flex",gap:4}}><Dot delay={0}/><Dot delay={.2}/><Dot delay={.4}/></span>{t.analyzing}…</>:t.generateDictum}
       </button>
     </div>
+    {error&&<div style={{background:C.red+"11",border:`1px solid ${C.red}33`,borderRadius:10,padding:"14px 18px",marginBottom:16,color:C.red,fontSize:13}}>
+      ⚠️ {error}
+    </div>}
     {text&&<div style={{background:C.card,border:`1px solid ${C.gold}44`,borderRadius:12,padding:22,animation:"fadeUp .4s ease",boxShadow:"0 1px 4px #0001"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingBottom:14,borderBottom:`1px solid ${C.border}`}}>
         <span style={{fontSize:18}}>⚖️</span>
-        <span style={{fontSize:11,color:C.gold,fontWeight:700,letterSpacing:1}}>{t.dictum} — {product} / {region}, {country}</span>
+        <span style={{fontSize:11,color:C.gold,fontWeight:700,letterSpacing:1}}>{t.dictum} — {displayProduct} / {region}, {country}</span>
       </div>
-      {/* FIX #3: Full text displayed with proper formatting */}
       <div style={{color:C.t1,fontSize:13,lineHeight:1.9,whiteSpace:"pre-wrap"}}>{text}</div>
     </div>}
   </div>;
@@ -715,4 +756,4 @@ export default function App(){
       {tab==="ai"&&<AIAnalysis data={allData} analysis={analysis} product={filters.product} country={filters.country} region={filters.region} unit={unit} t={t}/>}
     </div>
   </div>;
-      }
+                                                                                                                              }
