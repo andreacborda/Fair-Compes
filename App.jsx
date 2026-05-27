@@ -634,7 +634,7 @@ function RiskPanel({analysis,onGoToAlerts,country,t}){
   </div>;
 }
 
-// AI Analysis - fixed error handling and product name translation
+// AI Analysis - using correct API approach for deployed apps
 function AIAnalysis({data,analysis,product,country,region,unit,t}){
   const [text,setText]=useState("");
   const [loading,setLoading]=useState(false);
@@ -642,33 +642,43 @@ function AIAnalysis({data,analysis,product,country,region,unit,t}){
   const lf=LEGAL[country]||LEGAL["Colombia"];
   const displayProduct=t.products?.[product]||product;
   const Dot=({delay})=><span style={{width:7,height:7,borderRadius:"50%",background:C.gold,display:"inline-block",animation:`pulse 1.2s ease-in-out ${delay}s infinite`}}/>;
+
   const run=async()=>{
     if(!data.length)return;
     setLoading(true);setText("");setError("");
     const prompt=t.aiPrompt(product,region,country,unit,data,analysis,lf);
     try{
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),30000);
       const res=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
-        headers:{"Content-Type":"application/json"},
+        signal:controller.signal,
+        headers:{
+          "Content-Type":"application/json",
+          "anthropic-dangerous-direct-browser-access":"true",
+        },
         body:JSON.stringify({
           model:"claude-sonnet-4-20250514",
           max_tokens:1500,
           messages:[{role:"user",content:prompt}]
         })
       });
-      if(!res.ok){
-        const errData=await res.json().catch(()=>({}));
-        throw new Error(errData?.error?.message||`HTTP ${res.status}`);
-      }
+      clearTimeout(timeout);
       const d=await res.json();
       if(d.error){throw new Error(d.error.message||"API error");}
       const fullText=d.content?.map(b=>b.text||"").join("")||"";
-      if(!fullText){throw new Error("Empty response from API");}
+      if(!fullText){throw new Error("No response received");}
       setText(fullText);
     }catch(e){
-      setError(e.message||"Connection error. Please try again.");
+      if(e.name==="AbortError"){setError("Request timed out. Please try again.");}
+      else if(e.message?.includes("fetch")||e.message?.includes("network")){
+        setError("Network error. Please check your connection and try again.");
+      }else{
+        setError(e.message||"Error generating opinion. Please try again.");
+      }
     }finally{setLoading(false);}
   };
+
   return<div>
     <SectionTitle>{t.aiAnalysis}</SectionTitle>
     <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:22,marginBottom:20,boxShadow:"0 1px 4px #0001"}}>
@@ -682,7 +692,7 @@ function AIAnalysis({data,analysis,product,country,region,unit,t}){
         {loading?<><span style={{display:"flex",gap:4}}><Dot delay={0}/><Dot delay={.2}/><Dot delay={.4}/></span>{t.analyzing}…</>:t.generateDictum}
       </button>
     </div>
-    {error&&<div style={{background:C.red+"11",border:`1px solid ${C.red}33`,borderRadius:10,padding:"14px 18px",marginBottom:16,color:C.red,fontSize:13}}>
+    {error&&<div style={{background:C.red+"11",border:`1px solid ${C.red}33`,borderLeft:`3px solid ${C.red}`,borderRadius:10,padding:"14px 18px",marginBottom:16,color:C.red,fontSize:13,lineHeight:1.6}}>
       ⚠️ {error}
     </div>}
     {text&&<div style={{background:C.card,border:`1px solid ${C.gold}44`,borderRadius:12,padding:22,animation:"fadeUp .4s ease",boxShadow:"0 1px 4px #0001"}}>
@@ -784,4 +794,4 @@ export default function App(){
       {tab==="ai"&&<AIAnalysis data={allData} analysis={analysis} product={filters.product} country={filters.country} region={filters.region} unit={unit} t={t}/>}
     </div>
   </div>;
-}
+    }
