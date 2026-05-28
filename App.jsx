@@ -634,37 +634,141 @@ function RiskPanel({analysis,onGoToAlerts,country,t}){
   </div>;
 }
 
-// AI Analysis - using correct API approach for deployed apps
+// AI Analysis - smart local legal opinion generator (no external API)
 function AIAnalysis({data,analysis,product,country,region,unit,t}){
   const [text,setText]=useState("");
   const [loading,setLoading]=useState(false);
-  const [error,setError]=useState("");
   const lf=LEGAL[country]||LEGAL["Colombia"];
   const displayProduct=t.products?.[product]||product;
   const Dot=({delay})=><span style={{width:7,height:7,borderRadius:"50%",background:C.gold,display:"inline-block",animation:`pulse 1.2s ease-in-out ${delay}s infinite`}}/>;
 
-  const run=async()=>{
+  const generateLocalOpinion=()=>{
+    const {alerts,risk,variancePct,changePct,avg,max,min}=analysis;
+    const isES=t.appSubtitle==="MONITOR ANTIMONOPOLIO";
+    const sorted=[...data].sort((a,b)=>a.price-b.price);
+    const cheapest=sorted[0];
+    const mostExp=sorted[sorted.length-1];
+    const allUp=data.every(d=>d.price>d.prevPrice);
+
+    if(isES){
+      let opinion=`DICTAMEN TÉCNICO-JURÍDICO\n`;
+      opinion+=`Producto: ${product} | Territorio: ${region} | Jurisdicción: ${country}\n`;
+      opinion+=`Autoridad competente: ${lf.authority}\n`;
+      opinion+=`Marco legal: ${lf.law}\n\n`;
+
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      opinion+=`1. DIAGNÓSTICO ECONÓMICO DEL MERCADO\n`;
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      opinion+=`El mercado de ${product} en ${region} presenta un precio promedio de ${Math.round(avg).toLocaleString()} por ${unit}, con una dispersión entre competidores del ${variancePct.toFixed(2)}%. `;
+      if(variancePct<1){
+        opinion+=`Esta convergencia extrema de precios (inferior al 1%) entre ${data.length} actores del mercado constituye una anomalía estadística que no puede explicarse exclusivamente por factores estructurales de costos homogéneos.\n\n`;
+      } else {
+        opinion+=`La variación de precios entre competidores se sitúa en niveles ${variancePct<5?"bajos":"moderados"}, lo que ${variancePct<3?"podría indicar comportamiento coordinado":"es consistente con un mercado competitivo normal"}.\n\n`;
+      }
+      opinion+=`Durante el período analizado, el precio ${allUp?"aumentó en todos los actores simultáneamente un "+changePct.toFixed(1)+"%":"presentó variaciones diferenciadas entre competidores"}. `;
+      opinion+=`El actor con menor precio es ${cheapest?.company} (${cheapest?.price.toLocaleString()} / ${unit}) y el de mayor precio es ${mostExp?.company} (${mostExp?.price.toLocaleString()} / ${unit}).\n\n`;
+
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      opinion+=`2. PRÁCTICAS RESTRICTIVAS IDENTIFICADAS\n`;
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      if(alerts.length===0){
+        opinion+=`No se identificaron patrones de conducta anticompetitiva en el período analizado. El comportamiento de precios es consistente con una competencia normal en el mercado relevante.\n\n`;
+      } else {
+        alerts.forEach((a,i)=>{
+          opinion+=`${i+1}. ${a.type}\n`;
+          opinion+=`   Base legal: ${lf.rules?.[Object.keys(lf.rules).find(k=>t.patternTypes[k]===a.type)]||a.legal}\n`;
+          opinion+=`   Descripción: ${a.desc}\n`;
+          opinion+=`   Probabilidad de infracción: ${a.probability}\n\n`;
+        });
+      }
+
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      opinion+=`3. RECOMENDACIONES DE INVESTIGACIÓN\n`;
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      if(alerts.length===0){
+        opinion+=`Se recomienda mantener monitoreo periódico del mercado y ampliar el análisis a un período más extenso para detectar patrones de largo plazo.\n\n`;
+      } else {
+        opinion+=`Se recomienda a ${lf.authority}:\n\n`;
+        opinion+=`a) Iniciar una investigación preliminar para verificar la existencia de comunicaciones, acuerdos o prácticas concertadas entre los actores del mercado.\n\n`;
+        opinion+=`b) Solicitar a las empresas involucradas (${data.map(d=>d.company).join(", ")}) información sobre su estructura de costos, márgenes y política comercial.\n\n`;
+        opinion+=`c) Revisar actas de asociaciones gremiales del sector ${product} en ${region} durante el período analizado.\n\n`;
+        opinion+=`d) Ampliar el análisis comparativo con datos históricos de al menos 24 meses para identificar patrones estructurales.\n\n`;
+      }
+
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      opinion+=`4. NIVEL DE RIESGO Y SANCIONES APLICABLES\n`;
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      opinion+=`Nivel de riesgo detectado: ${risk.level} (Score: ${risk.score}/100)\n\n`;
+      opinion+=`En caso de confirmarse las conductas identificadas, las sanciones aplicables bajo ${lf.law} son:\n\n`;
+      opinion+=`• ${lf.sanction}\n\n`;
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      opinion+=`Análisis generado por Fair Compes · ${new Date().toLocaleDateString("es-CO")}`;
+      return opinion;
+    } else {
+      let opinion=`TECHNICAL-LEGAL OPINION\n`;
+      opinion+=`Product: ${displayProduct} | Territory: ${region} | Jurisdiction: ${country}\n`;
+      opinion+=`Competent Authority: ${lf.authority}\n`;
+      opinion+=`Legal Framework: ${lf.law}\n\n`;
+
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      opinion+=`1. ECONOMIC DIAGNOSIS\n`;
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      opinion+=`The ${displayProduct} market in ${region} shows an average price of ${Math.round(avg).toLocaleString()} per ${unit}, with a price dispersion among competitors of ${variancePct.toFixed(2)}%. `;
+      if(variancePct<1){
+        opinion+=`This extreme price convergence (below 1%) among ${data.length} market actors constitutes a statistical anomaly that cannot be explained solely by homogeneous cost structures.\n\n`;
+      } else {
+        opinion+=`The price variation among competitors is at ${variancePct<5?"low":"moderate"} levels, which ${variancePct<3?"may indicate coordinated behavior":"is consistent with a normally competitive market"}.\n\n`;
+      }
+      opinion+=`During the analyzed period, prices ${allUp?"increased simultaneously across all actors by "+changePct.toFixed(1)+"%":"showed differentiated variations among competitors"}. `;
+      opinion+=`The lowest-priced actor is ${cheapest?.company} (${cheapest?.price.toLocaleString()} / ${unit}) and the highest is ${mostExp?.company} (${mostExp?.price.toLocaleString()} / ${unit}).\n\n`;
+
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      opinion+=`2. IDENTIFIED RESTRICTIVE PRACTICES\n`;
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      if(alerts.length===0){
+        opinion+=`No anticompetitive conduct patterns were identified in the analyzed period. Price behavior is consistent with normal competition in the relevant market.\n\n`;
+      } else {
+        alerts.forEach((a,i)=>{
+          opinion+=`${i+1}. ${a.type}\n`;
+          opinion+=`   Legal basis: ${lf.rules?.[Object.keys(lf.rules).find(k=>t.patternTypes[k]===a.type)]||a.legal}\n`;
+          opinion+=`   Description: ${a.desc}\n`;
+          opinion+=`   Probability of infringement: ${a.probability}\n\n`;
+        });
+      }
+
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      opinion+=`3. INVESTIGATION RECOMMENDATIONS\n`;
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      if(alerts.length===0){
+        opinion+=`It is recommended to maintain periodic market monitoring and extend the analysis to a longer period to detect long-term patterns.\n\n`;
+      } else {
+        opinion+=`It is recommended that ${lf.authority}:\n\n`;
+        opinion+=`a) Initiate a preliminary investigation to verify the existence of communications, agreements or concerted practices among market actors.\n\n`;
+        opinion+=`b) Request from the involved companies (${data.map(d=>d.company).join(", ")}) information on their cost structure, margins and commercial policy.\n\n`;
+        opinion+=`c) Review minutes of industry associations in the ${displayProduct} sector in ${region} during the analyzed period.\n\n`;
+        opinion+=`d) Extend the comparative analysis with historical data of at least 24 months to identify structural patterns.\n\n`;
+      }
+
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      opinion+=`4. RISK LEVEL AND APPLICABLE SANCTIONS\n`;
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      opinion+=`Detected risk level: ${risk.level} (Score: ${risk.score}/100)\n\n`;
+      opinion+=`Should the identified conduct be confirmed, sanctions applicable under ${lf.law} are:\n\n`;
+      opinion+=`• ${lf.sanction}\n\n`;
+      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      opinion+=`Analysis generated by Fair Compes · ${new Date().toLocaleDateString("en-US")}`;
+      return opinion;
+    }
+  };
+
+  const run=()=>{
     if(!data.length)return;
-    setLoading(true);setText("");setError("");
-    const prompt=t.aiPrompt(product,region,country,unit,data,analysis,lf);
-    try{
-      const controller=new AbortController();
-      const timeout=setTimeout(()=>controller.abort(),30000);
-      const res=await fetch("https://faircompes-api.onrender.com/api/legal-opinion",{
-        method:"POST",
-        signal:controller.signal,
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({prompt})
-      });
-      clearTimeout(timeout);
-      const d=await res.json();
-      if(d.error){throw new Error(d.error);}
-      if(!d.text){throw new Error("No response received");}
-      setText(d.text);
-    }catch(e){
-      if(e.name==="AbortError"){setError("Request timed out. Please try again.");}
-      else{setError(e.message||"Error generating opinion. Please try again.");}
-    }finally{setLoading(false);}
+    setLoading(true);setText("");
+    setTimeout(()=>{
+      const opinion=generateLocalOpinion();
+      setText(opinion);
+      setLoading(false);
+    },1500);
   };
 
   return<div>
@@ -680,9 +784,6 @@ function AIAnalysis({data,analysis,product,country,region,unit,t}){
         {loading?<><span style={{display:"flex",gap:4}}><Dot delay={0}/><Dot delay={.2}/><Dot delay={.4}/></span>{t.analyzing}…</>:t.generateDictum}
       </button>
     </div>
-    {error&&<div style={{background:C.red+"11",border:`1px solid ${C.red}33`,borderLeft:`3px solid ${C.red}`,borderRadius:10,padding:"14px 18px",marginBottom:16,color:C.red,fontSize:13,lineHeight:1.6}}>
-      ⚠️ {error}
-    </div>}
     {text&&<div style={{background:C.card,border:`1px solid ${C.gold}44`,borderRadius:12,padding:22,animation:"fadeUp .4s ease",boxShadow:"0 1px 4px #0001"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingBottom:14,borderBottom:`1px solid ${C.border}`}}>
         <span style={{fontSize:18}}>⚖️</span>
@@ -782,4 +883,4 @@ export default function App(){
       {tab==="ai"&&<AIAnalysis data={allData} analysis={analysis} product={filters.product} country={filters.country} region={filters.region} unit={unit} t={t}/>}
     </div>
   </div>;
-      }
+}
