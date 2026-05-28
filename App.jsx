@@ -782,4 +782,4 @@ export default function App(){
       {tab==="ai"&&<AIAnalysis data={allData} analysis={analysis} product={filters.product} country={filters.country} region={filters.region} unit={unit} t={t}/>}
     </div>
   </div>;
-    }
+      }
