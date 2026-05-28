@@ -650,32 +650,20 @@ function AIAnalysis({data,analysis,product,country,region,unit,t}){
     try{
       const controller=new AbortController();
       const timeout=setTimeout(()=>controller.abort(),30000);
-      const res=await fetch("https://api.anthropic.com/v1/messages",{
+      const res=await fetch("https://faircompes-api.onrender.com/api/legal-opinion",{
         method:"POST",
         signal:controller.signal,
-        headers:{
-          "Content-Type":"application/json",
-          "anthropic-dangerous-direct-browser-access":"true",
-        },
-        body:JSON.stringify({
-          model:"claude-sonnet-4-20250514",
-          max_tokens:1500,
-          messages:[{role:"user",content:prompt}]
-        })
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({prompt})
       });
       clearTimeout(timeout);
       const d=await res.json();
-      if(d.error){throw new Error(d.error.message||"API error");}
-      const fullText=d.content?.map(b=>b.text||"").join("")||"";
-      if(!fullText){throw new Error("No response received");}
-      setText(fullText);
+      if(d.error){throw new Error(d.error);}
+      if(!d.text){throw new Error("No response received");}
+      setText(d.text);
     }catch(e){
       if(e.name==="AbortError"){setError("Request timed out. Please try again.");}
-      else if(e.message?.includes("fetch")||e.message?.includes("network")){
-        setError("Network error. Please check your connection and try again.");
-      }else{
-        setError(e.message||"Error generating opinion. Please try again.");
-      }
+      else{setError(e.message||"Error generating opinion. Please try again.");}
     }finally{setLoading(false);}
   };
 
