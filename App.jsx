@@ -1,9 +1,5 @@
-import { useState, useMemo } from "react";
-import {
-  BarChart, Bar, LineChart, Line, RadarChart, Radar,
-  PolarGrid, PolarAngleAxis, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, ReferenceLine,
-} from "recharts";
+import { useState, useMemo, useEffect } from "react";
+import { BarChart, Bar, LineChart, Line, RadarChart, Radar, PolarGrid, PolarAngleAxis, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 
 const C = {
   bg:"#f0f4f8", surface:"#ffffff", card:"#ffffff",
@@ -12,148 +8,6 @@ const C = {
   teal:"#0d9488", red:"#dc2626", amber:"#d97706",
   green:"#059669", blue:"#2563eb", purple:"#7c3aed",
   t1:"#0f172a", t2:"#1e3a5f", t3:"#475569", t4:"#94a3b8",
-};
-
-// ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
-const T = {
-  es: {
-    appSubtitle:"MONITOR ANTIMONOPOLIO", live:"EN VIVO", alerts:"ALERTA", alertsPlural:"ALERTAS",
-    tabs:["📊 Dashboard","📉 Comparativa","🔔 Alertas","⚖️ Dictamen IA"],
-    filterTitle:"Filtros de Consulta", worldRegion:"Región del mundo", country:"País",
-    territory:"Territorio / Ciudad", market:"Mercado", product:"Producto / Servicio",
-    company:"Empresa", dateFrom:"Fecha desde", dateTo:"Fecha hasta",
-    hourFrom:"Hora desde", hourTo:"Hora hasta", authority:"AUTORIDAD COMPETENTE",
-    legalFrame:"MARCO LEGAL", allCompanies:"Todas",
-    riskLevel:"Nivel de riesgo", marketDispersion:"Dispersión mercado",
-    avgVariation:"Variación media", maxPrice:"Precio máximo", minPrice:"Precio mínimo",
-    avgPrice:"Precio promedio", betweenCompetitors:"entre competidores",
-    vsPrevPeriod:"vs período anterior", mostExpensive:"más caro del mercado",
-    cheapest:"más barato del mercado", marketAvg:"media del mercado", score:"Score",
-    activeAlerts:"Alertas Activas", detection:"detección", detections:"detecciones",
-    critical:"CRÍTICAS", high:"ALTAS", medium:"MEDIAS", jurisdiction:"JURISDICCIÓN",
-    noAlerts:"No se detectaron prácticas restrictivas en el mercado seleccionado.",
-    notifChannels:"Canales de Notificación", emailAlerts:"Correo electrónico",
-    active:"Activo", alwaysActive:"Siempre activo", inAppNotif:"Notificación en app",
-    inAppDesc:"Las alertas se actualizan automáticamente al cambiar los filtros.",
-    noConfigRequired:"Sin configuración requerida", comingSoon:"Próximamente",
-    inDevelopment:"En desarrollo", detectionThresholds:"Umbrales de Detección",
-    activateEmail:"Activar alertas por email", configured:"✓ Configurado",
-    comparison:"Comparativa entre Competidores",
-    rankingTitle:"RANKING DE PRECIOS — menor a mayor", average:"Promedio",
-    currentVsPrev:"PRECIO ACTUAL vs ANTERIOR",
-    deviationVsAvg:"DESVIACIÓN VS PROMEDIO DE MERCADO",
-    historicalEvolution:"EVOLUCIÓN HISTÓRICA COMPARADA (7 MESES)",
-    riskStats:"Estadísticas de Riesgo Anticompetitivo", seeDetail:"Ver detalle →",
-    aiAnalysis:"Dictamen Jurídico con IA",
-    aiDesc:"La IA genera un dictamen técnico-jurídico con base legal exacta, probabilidad de infracción y recomendaciones de investigación.",
-    generateDictum:"⚖️ Generar Dictamen Legal", analyzing:"Analizando", dictum:"DICTAMEN",
-    legalBase:"BASE LEGAL", recommendedAction:"ACCIÓN RECOMENDADA",
-    applicableSanctions:"SANCIONES APLICABLES", severity:"SEVERIDAD", probability:"PROBABILIDAD",
-    period:"Período", schedule:"Horario", currentPrice:"Precio actual",
-    prevPrice:"Precio anterior", variation:"Variación", vsAverage:"vs Promedio",
-    marketShare:"Cuota mercado", changes30:"Cambios 30 días",
-    priceAdjustments:"ajustes de precio", individualProfile:"Perfil Individual",
-    historicalPrice:"EVOLUCIÓN HISTÓRICA DE PRECIO", competitiveScore:"SCORECARD COMPETITIVO",
-    higherBetter:"Mayor valor = mejor desempeño relativo", per:"por",
-    prevPeriod:"período anterior", marketDeviation:"desviación del mercado", estimated:"estimado",
-    regions:{"América Latina":"América Latina","Europa":"Europa","América del Norte":"América del Norte","Asia":"Asia"},
-    markets:{"Energía":"Energía","Telecomunicaciones":"Telecomunicaciones","Alimentos":"Alimentos","Seguros":"Seguros","Farmacéutico":"Farmacéutico","Transporte":"Transporte","Banca y Finanzas":"Banca y Finanzas"},
-    patternTypes:{"FIJACIÓN DE PRECIOS":"FIJACIÓN DE PRECIOS","ALZA SIMULTÁNEA":"ALZA SIMULTÁNEA","PARALELISMO DE PRECIOS":"PARALELISMO DE PRECIOS","POSICIÓN DOMINANTE":"POSICIÓN DOMINANTE","PRECIOS PREDATORIOS":"PRECIOS PREDATORIOS","CONCENTRACIÓN":"CONCENTRACIÓN"},
-    patternDescs:{"FIJACIÓN DE PRECIOS":(v,n)=>`Dispersión de solo ${v}% entre ${n} competidores. Coordinación horizontal altamente probable.`,"ALZA SIMULTÁNEA":(v)=>`Todos los actores incrementaron precios ${v}% simultáneamente. Posible señalización o acuerdo tácito.`,"PARALELISMO DE PRECIOS":(v)=>`Diferencia máxima entre actores: ${v}%. Comportamiento paralelo sin justificación estructural evidente.`,"POSICIÓN DOMINANTE":(c,v)=>`${c} concentra el ${v}% del mercado. Posible abuso si impone condiciones desventajosas.`,"PRECIOS PREDATORIOS":(c,v)=>`${c} vende ${v}% por debajo del promedio. Posible estrategia para excluir rivales.`,"CONCENTRACIÓN":(v)=>`Las 2 empresas más grandes concentran el ${v}% del mercado. Estructura oligopólica con alto riesgo de coordinación.`},
-    patternActions:{"FIJACIÓN DE PRECIOS":"Iniciar investigación formal. Solicitar información sobre comunicaciones entre empresas. Revisar actas de gremios.","ALZA SIMULTÁNEA":"Verificar si existieron comunicados de prensa, reuniones gremiales o declaraciones públicas previas al alza.","PARALELISMO DE PRECIOS":"Analizar si la uniformidad obedece a costos homogéneos, regulación tarifaria o factores de mercado legítimos.","POSICIÓN DOMINANTE":"Investigar si impone precios excesivos, condiciona ventas o discrimina clientes sin justificación objetiva.","PRECIOS PREDATORIOS":"Solicitar estructura de costos. Verificar si el precio cubre al menos el costo variable medio.","CONCENTRACIÓN":"Revisar historia de adquisiciones. Evaluar barreras de entrada. Monitorear operaciones de integración futuras."},
-    sevLabels:{"CRÍTICA":"CRÍTICA","ALTA":"ALTA","MEDIA":"MEDIA"},
-    riskLabels:{critical:"CRÍTICO",high:"ALTO",medium:"MEDIO",low:"BAJO"},
-    probLabels:{high80:"Muy Alta (>80%)",high60:"Alta (60-80%)",med40:"Media (40-60%)",med30:"Media-Alta (50-70%)",med35:"Media (35-55%)",med30b:"Media (30-50%)",med30c:"Media (30-45%)"},
-    thresholds:["🔴 Fijación de precios — dispersión menor al 0.5%","🟠 Alza simultánea — todos los actores suben más del 10%","🟡 Paralelismo de precios — dispersión entre 0.5% y 2%","🔵 Posición dominante — cuota de mercado superior al 60%","⚡ Precios predatorios — precio menor al 75% del promedio","🔶 Alta concentración — top 2 empresas superan el 80%"],
-    tableHeaders:["#","EMPRESA","PRECIO","ANTERIOR","VARIACIÓN","vs PROMEDIO","CUOTA","QUEJAS"],
-    prev:"Anterior", current:"Actual", devFromAvg:"Desv. del promedio", complaints:"Quejas", selected:"seleccionada",
-    allCompaniesLabel:"Todas las empresas",
-    aiPrompt:(product,region,country,unit,data,analysis,lf)=>`Eres un experto en derecho de la competencia. Analiza estos datos bajo el marco legal de ${country}:\n\nJURISDICCIÓN: ${country}\nAUTORIDAD: ${lf.authority}\nMARCO LEGAL: ${lf.law}\nPRODUCTO: ${product} | TERRITORIO: ${region} | UNIDAD: ${unit}\n\nDATOS:\n${data.map(d=>`- ${d.company}: ${d.price.toLocaleString()} (ant: ${d.prevPrice.toLocaleString()}, var: ${(((d.price-d.prevPrice)/d.prevPrice)*100).toFixed(1)}%, cuota: ${d.marketShare}%)`).join("\n")}\n\nESTADÍSTICAS:\n- Dispersión: ${analysis.variancePct?.toFixed(2)}%\n- Variación: ${analysis.changePct?.toFixed(1)}%\n- Riesgo: ${analysis.risk?.level} (${analysis.risk?.score}/100)\n- Alertas: ${analysis.alerts?.map(a=>a.type).join(", ")||"Ninguna"}\n\nGenera un dictamen técnico-jurídico completo con:\n1. DIAGNÓSTICO ECONÓMICO del mercado (2 párrafos)\n2. PRÁCTICAS IDENTIFICADAS con artículos exactos de ${lf.law}\n3. PROBABILIDAD DE INFRACCIÓN por cada práctica detectada\n4. RECOMENDACIONES DE INVESTIGACIÓN priorizadas para ${lf.authority}\n5. SANCIONES APLICABLES con montos específicos según ${lf.law}\n\nSé específico y técnico. Usa terminología jurídica apropiada.`,
-  },
-  en: {
-    appSubtitle:"ANTITRUST MONITOR", live:"LIVE", alerts:"ALERT", alertsPlural:"ALERTS",
-    tabs:["📊 Dashboard","📉 Comparison","🔔 Alerts","⚖️ AI Legal Opinion"],
-    filterTitle:"Query Filters", worldRegion:"World Region", country:"Country",
-    territory:"Territory / City", market:"Market", product:"Product / Service",
-    company:"Company", dateFrom:"Date from", dateTo:"Date to",
-    hourFrom:"Hour from", hourTo:"Hour to", authority:"COMPETENT AUTHORITY",
-    legalFrame:"LEGAL FRAMEWORK", allCompanies:"All",
-    riskLevel:"Risk level", marketDispersion:"Market dispersion",
-    avgVariation:"Average variation", maxPrice:"Maximum price", minPrice:"Minimum price",
-    avgPrice:"Average price", betweenCompetitors:"between competitors",
-    vsPrevPeriod:"vs previous period", mostExpensive:"most expensive in market",
-    cheapest:"cheapest in market", marketAvg:"market average", score:"Score",
-    activeAlerts:"Active Alerts", detection:"detection", detections:"detections",
-    critical:"CRITICAL", high:"HIGH", medium:"MEDIUM", jurisdiction:"JURISDICTION",
-    noAlerts:"No restrictive practices detected in the selected market.",
-    notifChannels:"Notification Channels", emailAlerts:"Email",
-    active:"Active", alwaysActive:"Always active", inAppNotif:"In-app notification",
-    inAppDesc:"Alerts update automatically when filters change.",
-    noConfigRequired:"No configuration required", comingSoon:"Coming soon",
-    inDevelopment:"In development", detectionThresholds:"Detection Thresholds",
-    activateEmail:"Activate email alerts", configured:"✓ Configured",
-    comparison:"Competitor Comparison",
-    rankingTitle:"PRICE RANKING — lowest to highest", average:"Average",
-    currentVsPrev:"CURRENT vs PREVIOUS PRICE",
-    deviationVsAvg:"DEVIATION VS MARKET AVERAGE",
-    historicalEvolution:"HISTORICAL COMPARISON (7 MONTHS)",
-    riskStats:"Antitrust Risk Statistics", seeDetail:"See detail →",
-    aiAnalysis:"AI Legal Opinion",
-    aiDesc:"The AI generates a technical-legal opinion with exact legal basis, probability of infringement and investigation recommendations.",
-    generateDictum:"⚖️ Generate Legal Opinion", analyzing:"Analyzing", dictum:"LEGAL OPINION",
-    legalBase:"LEGAL BASIS", recommendedAction:"RECOMMENDED ACTION",
-    applicableSanctions:"APPLICABLE SANCTIONS", severity:"SEVERITY", probability:"PROBABILITY",
-    period:"Period", schedule:"Schedule", currentPrice:"Current price",
-    prevPrice:"Previous price", variation:"Variation", vsAverage:"vs Average",
-    marketShare:"Market share", changes30:"Changes 30 days",
-    priceAdjustments:"price adjustments", individualProfile:"Individual Profile",
-    historicalPrice:"HISTORICAL PRICE EVOLUTION", competitiveScore:"COMPETITIVE SCORECARD",
-    higherBetter:"Higher value = better relative performance", per:"per",
-    prevPeriod:"previous period", marketDeviation:"market deviation", estimated:"estimated",
-    regions:{"América Latina":"Latin America","Europa":"Europe","América del Norte":"North America","Asia":"Asia"},
-    markets:{"Energía":"Energy","Telecomunicaciones":"Telecommunications","Alimentos":"Food","Seguros":"Insurance","Farmacéutico":"Pharmaceutical","Transporte":"Transport","Banca y Finanzas":"Banking & Finance"},
-    patternTypes:{"FIJACIÓN DE PRECIOS":"PRICE FIXING","ALZA SIMULTÁNEA":"SIMULTANEOUS PRICE HIKE","PARALELISMO DE PRECIOS":"PRICE PARALLELISM","POSICIÓN DOMINANTE":"DOMINANT POSITION","PRECIOS PREDATORIOS":"PREDATORY PRICING","CONCENTRACIÓN":"MARKET CONCENTRATION"},
-    patternDescs:{"FIJACIÓN DE PRECIOS":(v,n)=>`Dispersion of only ${v}% among ${n} competitors. Horizontal coordination highly probable.`,"ALZA SIMULTÁNEA":(v)=>`All actors increased prices ${v}% simultaneously. Possible signaling or tacit agreement.`,"PARALELISMO DE PRECIOS":(v)=>`Maximum difference between actors: ${v}%. Parallel behavior without apparent structural justification.`,"POSICIÓN DOMINANTE":(c,v)=>`${c} holds ${v}% of the market. Possible abuse if imposing disadvantageous conditions.`,"PRECIOS PREDATORIOS":(c,v)=>`${c} sells ${v}% below average. Possible strategy to exclude rivals.`,"CONCENTRACIÓN":(v)=>`Top 2 companies hold ${v}% of the market. Oligopolistic structure with high coordination risk.`},
-    patternActions:{"FIJACIÓN DE PRECIOS":"Initiate formal investigation. Request information on communications between companies. Review industry association minutes.","ALZA SIMULTÁNEA":"Check if there were press releases, industry meetings or public statements prior to the price increase.","PARALELISMO DE PRECIOS":"Analyze whether uniformity stems from homogeneous costs, tariff regulation or legitimate market factors.","POSICIÓN DOMINANTE":"Investigate whether the company imposes excessive prices, conditions sales or discriminates without objective justification.","PRECIOS PREDATORIOS":"Request cost structure. Verify whether price at least covers average variable cost.","CONCENTRACIÓN":"Review acquisition history. Assess entry barriers. Monitor future integration operations."},
-    sevLabels:{"CRÍTICA":"CRITICAL","ALTA":"HIGH","MEDIA":"MEDIUM"},
-    riskLabels:{critical:"CRITICAL",high:"HIGH",medium:"MEDIUM",low:"LOW"},
-    probLabels:{high80:"Very High (>80%)",high60:"High (60-80%)",med40:"Medium (40-60%)",med30:"Medium-High (50-70%)",med35:"Medium (35-55%)",med30b:"Medium (30-50%)",med30c:"Medium (30-45%)"},
-    thresholds:["🔴 Price fixing — dispersion below 0.5%","🟠 Simultaneous hike — all actors raise prices over 10%","🟡 Price parallelism — dispersion between 0.5% and 2%","🔵 Dominant position — market share above 60%","⚡ Predatory pricing — price below 75% of average","🔶 High concentration — top 2 companies exceed 80%"],
-    tableHeaders:["#","COMPANY","PRICE","PREVIOUS","VARIATION","vs AVERAGE","SHARE","COMPLAINTS"],
-    prev:"Previous", current:"Current", devFromAvg:"Dev. from avg", complaints:"Complaints", selected:"selected",
-    allCompaniesLabel:"All companies",
-    products:{
-      "Gasolina Regular":"Regular Gasoline","Gasolina Premium":"Premium Gasoline",
-      "ACPM / Diésel":"Diesel Fuel","Gas Natural":"Natural Gas",
-      "Energía Eléctrica":"Electric Power","Carbón":"Coal","Etanol":"Ethanol",
-      "Gas Licuado (GLP)":"LPG Gas","Internet Hogar 100Mbps":"Home Internet 100Mbps",
-      "Internet Hogar 300Mbps":"Home Internet 300Mbps","Internet Hogar 1Gbps":"Home Internet 1Gbps",
-      "Telefonía Móvil Postpago":"Postpaid Mobile","Telefonía Móvil Prepago":"Prepaid Mobile",
-      "TV por Suscripción":"Subscription TV","Telefonía Fija":"Landline Phone",
-      "Roaming Internacional":"International Roaming","Pollo Entero":"Whole Chicken",
-      "Carne de Res (kg)":"Beef (kg)","Aceite Vegetal 1L":"Vegetable Oil 1L",
-      "Leche 1L":"Milk 1L","Arroz 1kg":"Rice 1kg","Pan Tajado":"Sliced Bread",
-      "Huevos (docena)":"Eggs (dozen)","Azúcar 1kg":"Sugar 1kg",
-      "Harina de Trigo 1kg":"Wheat Flour 1kg","Café Molido 500g":"Ground Coffee 500g",
-      "Seguro Auto Básico":"Basic Auto Insurance","Seguro Auto Todo Riesgo":"Full Coverage Auto Insurance",
-      "Seguro de Vida":"Life Insurance","SOAT / Seguro Obligatorio":"Mandatory Insurance",
-      "Seguro de Hogar":"Home Insurance","Seguro de Salud":"Health Insurance",
-      "Seguro Empresarial":"Business Insurance","Seguro de Viaje":"Travel Insurance",
-      "Acetaminofén 500mg":"Acetaminophen 500mg","Ibuprofeno 400mg":"Ibuprofen 400mg",
-      "Amoxicilina 500mg":"Amoxicillin 500mg","Omeprazol 20mg":"Omeprazole 20mg",
-      "Metformina 850mg":"Metformin 850mg","Atorvastatina 20mg":"Atorvastatin 20mg",
-      "Losartán 50mg":"Losartan 50mg","Vitamina C 1000mg":"Vitamin C 1000mg",
-      "Taxi / Cabify km":"Taxi / Rideshare km","Servicio de Bus":"Bus Service",
-      "Vuelo Doméstico":"Domestic Flight","Vuelo Internacional":"International Flight",
-      "Peaje Autopista":"Highway Toll","Servicio de Metro":"Metro Service",
-      "Transporte de Carga":"Freight Transport","Mensajería Express":"Express Delivery",
-      "Cuenta de Ahorros":"Savings Account","Tarjeta de Crédito":"Credit Card",
-      "Crédito de Consumo":"Consumer Loan","Crédito Hipotecario":"Mortgage Loan",
-      "Comisión Transferencia":"Transfer Fee","CDT / Depósito a Plazo":"Time Deposit",
-      "Seguro de Depósitos":"Deposit Insurance","Nómina Empresarial":"Corporate Payroll",
-    },
-    aiPrompt:(product,region,country,unit,data,analysis,lf)=>`You are an expert in competition law. Analyze the following market data under the legal framework of ${country}:\n\nJURISDICTION: ${country}\nAUTHORITY: ${lf.authority}\nLEGAL FRAMEWORK: ${lf.law}\nPRODUCT: ${product} | TERRITORY: ${region} | UNIT: ${unit}\n\nDATA:\n${data.map(d=>`- ${d.company}: ${d.price.toLocaleString()} (prev: ${d.prevPrice.toLocaleString()}, var: ${(((d.price-d.prevPrice)/d.prevPrice)*100).toFixed(1)}%, share: ${d.marketShare}%)`).join("\n")}\n\nSTATISTICS:\n- Dispersion: ${analysis.variancePct?.toFixed(2)}%\n- Variation: ${analysis.changePct?.toFixed(1)}%\n- Risk: ${analysis.risk?.level} (${analysis.risk?.score}/100)\n- Alerts: ${analysis.alerts?.map(a=>a.type).join(", ")||"None"}\n\nGenerate a complete technical-legal opinion with:\n1. ECONOMIC DIAGNOSIS of the market (2 paragraphs)\n2. IDENTIFIED PRACTICES with exact articles from ${lf.law}\n3. PROBABILITY OF INFRINGEMENT for each detected practice\n4. INVESTIGATION RECOMMENDATIONS prioritized for ${lf.authority}\n5. APPLICABLE SANCTIONS with specific amounts under ${lf.law}\n\nBe specific and technical. Use appropriate legal terminology.`,
-  },
 };
 
 // ─── GEO ──────────────────────────────────────────────────────────────────────
@@ -165,6 +19,10 @@ const GEO = {
     "Argentina":{ flag:"🇦🇷", currency:"ARS", regions:["Nacional","Buenos Aires","Córdoba","Rosario","Mendoza","Tucumán","La Plata"] },
     "Chile":{ flag:"🇨🇱", currency:"CLP", regions:["Nacional","Santiago","Valparaíso","Concepción","Antofagasta","La Serena"] },
     "Perú":{ flag:"🇵🇪", currency:"PEN", regions:["Nacional","Lima","Arequipa","Trujillo","Chiclayo","Piura"] },
+    "Ecuador":{ flag:"🇪🇨", currency:"USD", regions:["Nacional","Quito","Guayaquil","Cuenca","Ambato","Manta"] },
+    "Bolivia":{ flag:"🇧🇴", currency:"BOB", regions:["Nacional","La Paz","Santa Cruz","Cochabamba","Oruro","Sucre"] },
+    "Paraguay":{ flag:"🇵🇾", currency:"PYG", regions:["Nacional","Asunción","Ciudad del Este","Encarnación","San Lorenzo"] },
+    "Uruguay":{ flag:"🇺🇾", currency:"UYU", regions:["Nacional","Montevideo","Salto","Paysandú","Las Piedras"] },
   }},
   "Europa":{ flag:"🌍", countries:{
     "España":{ flag:"🇪🇸", currency:"EUR", regions:["Nacional","Madrid","Barcelona","Valencia","Sevilla","Bilbao","Zaragoza"] },
@@ -172,12 +30,17 @@ const GEO = {
     "Alemania":{ flag:"🇩🇪", currency:"EUR", regions:["Nacional","Berlín","Múnich","Hamburgo","Fráncfort","Colonia","Stuttgart"] },
     "Italia":{ flag:"🇮🇹", currency:"EUR", regions:["Nacional","Roma","Milán","Nápoles","Turín","Palermo","Génova"] },
     "Reino Unido":{ flag:"🇬🇧", currency:"GBP", regions:["Nacional","Londres","Manchester","Birmingham","Glasgow","Liverpool"] },
+    "Portugal":{ flag:"🇵🇹", currency:"EUR", regions:["Nacional","Lisboa","Porto","Braga","Coimbra","Setúbal"] },
+    "Países Bajos":{ flag:"🇳🇱", currency:"EUR", regions:["Nacional","Ámsterdam","Rotterdam","La Haya","Utrecht","Eindhoven"] },
+    "Suecia":{ flag:"🇸🇪", currency:"SEK", regions:["Nacional","Estocolmo","Gotemburgo","Malmö","Uppsala","Västerås"] },
+    "Polonia":{ flag:"🇵🇱", currency:"PLN", regions:["Nacional","Varsovia","Cracovia","Lodz","Wroclaw","Poznan"] },
   }},
   "América del Norte":{ flag:"🌎", countries:{
     "Estados Unidos":{ flag:"🇺🇸", currency:"USD", regions:["Nacional","Nueva York","Los Ángeles","Chicago","Houston","Miami","Dallas"] },
     "Canadá":{ flag:"🇨🇦", currency:"CAD", regions:["Nacional","Toronto","Montreal","Vancouver","Calgary","Ottawa","Edmonton"] },
   }},
   "Asia":{ flag:"🌏", countries:{
+    "China":{ flag:"🇨🇳", currency:"CNY", regions:["Nacional","Pekín","Shanghái","Shenzhen","Guangzhou","Chengdu","Wuhan"] },
     "Japón":{ flag:"🇯🇵", currency:"JPY", regions:["Nacional","Tokio","Osaka","Kioto","Yokohama","Nagoya","Sapporo"] },
     "Corea del Sur":{ flag:"🇰🇷", currency:"KRW", regions:["Nacional","Seúl","Busan","Incheon","Daegu","Daejeon"] },
     "India":{ flag:"🇮🇳", currency:"INR", regions:["Nacional","Bombay","Delhi","Bangalore","Chennai","Hyderabad","Calcuta"] },
@@ -186,159 +49,262 @@ const GEO = {
 
 const LEGAL = {
   "Colombia":{ authority:"Superintendencia de Industria y Comercio (SIC)", law:"Decreto 2153/1992 y Ley 1340/2009", rules:{"FIJACIÓN DE PRECIOS":"Art. 47 núm. 1, Decreto 2153/1992","ALZA SIMULTÁNEA":"Art. 47 núm. 1-2, Decreto 2153/1992","PARALELISMO DE PRECIOS":"Art. 47 núm. 2, Decreto 2153/1992","POSICIÓN DOMINANTE":"Art. 50, Decreto 2153/1992","PRECIOS PREDATORIOS":"Art. 50 núm. 3, Decreto 2153/1992","CONCENTRACIÓN":"Ley 1340/2009 Art. 9"}, sanction:"Multas hasta 100.000 SMMLV o el 150% de la utilidad derivada." },
-  "México":{ authority:"Comisión Federal de Competencia Económica (COFECE)", law:"Ley Federal de Competencia Económica (LFCE) 2014", rules:{"FIJACIÓN DE PRECIOS":"Art. 53 LFCE","ALZA SIMULTÁNEA":"Art. 53 LFCE","PARALELISMO DE PRECIOS":"Art. 56 LFCE","POSICIÓN DOMINANTE":"Art. 56 LFCE","PRECIOS PREDATORIOS":"Art. 56 fracc. VII LFCE","CONCENTRACIÓN":"Art. 61 LFCE"}, sanction:"Multas hasta el 10% de los ingresos anuales." },
-  "Brasil":{ authority:"Conselho Administrativo de Defesa Econômica (CADE)", law:"Lei 12.529/2011", rules:{"FIJACIÓN DE PRECIOS":"Art. 36 §3º I","ALZA SIMULTÁNEA":"Art. 36 §3º","PARALELISMO DE PRECIOS":"Art. 36 II","POSICIÓN DOMINANTE":"Art. 36 §2º","PRECIOS PREDATORIOS":"Art. 36 §3º XV","CONCENTRACIÓN":"Art. 88"}, sanction:"Multa de 0,1% a 20% do faturamento bruto." },
-  "Argentina":{ authority:"Comisión Nacional de Defensa de la Competencia (CNDC)", law:"Ley 27.442/2018", rules:{"FIJACIÓN DE PRECIOS":"Art. 2º a)","ALZA SIMULTÁNEA":"Art. 2º a)","PARALELISMO DE PRECIOS":"Art. 3º","POSICIÓN DOMINANTE":"Art. 3º","PRECIOS PREDATORIOS":"Art. 3º i)","CONCENTRACIÓN":"Art. 8º"}, sanction:"Multas de hasta el 30% de la facturación." },
-  "Chile":{ authority:"Fiscalía Nacional Económica (FNE) y TDLC", law:"Decreto Ley 211/1973", rules:{"FIJACIÓN DE PRECIOS":"Art. 3º a) DL 211","ALZA SIMULTÁNEA":"Art. 3º a) DL 211","PARALELISMO DE PRECIOS":"Art. 3º DL 211","POSICIÓN DOMINANTE":"Art. 3º b) DL 211","PRECIOS PREDATORIOS":"Art. 3º b) DL 211","CONCENTRACIÓN":"Art. 48 DL 211"}, sanction:"Multas hasta 30.000 UTA (~USD 20M)." },
-  "Perú":{ authority:"Instituto Nacional de Defensa de la Competencia (INDECOPI)", law:"Decreto Legislativo 1034/2008", rules:{"FIJACIÓN DE PRECIOS":"Art. 11.1 DL 1034","ALZA SIMULTÁNEA":"Art. 11.1 DL 1034","PARALELISMO DE PRECIOS":"Art. 11 DL 1034","POSICIÓN DOMINANTE":"Art. 10 DL 1034","PRECIOS PREDATORIOS":"Art. 10.2 e) DL 1034","CONCENTRACIÓN":"Ley 31112/2021"}, sanction:"Multas hasta 1.000 UIT o el 12% de ventas anuales." },
-  "España":{ authority:"Comisión Nacional de Mercados y la Competencia (CNMC)", law:"Ley 15/2007 + Art. 101-102 TFUE", rules:{"FIJACIÓN DE PRECIOS":"Art. 1 LDC / Art. 101 TFUE","ALZA SIMULTÁNEA":"Art. 1 LDC","PARALELISMO DE PRECIOS":"Art. 1 LDC","POSICIÓN DOMINANTE":"Art. 2 LDC / Art. 102 TFUE","PRECIOS PREDATORIOS":"Art. 2.2 b) LDC","CONCENTRACIÓN":"Art. 7 LDC"}, sanction:"Multas hasta el 10% del volumen de negocios mundial." },
+  "México":{ authority:"COFECE", law:"Ley Federal de Competencia Económica (LFCE) 2014", rules:{"FIJACIÓN DE PRECIOS":"Art. 53 LFCE","ALZA SIMULTÁNEA":"Art. 53 LFCE","PARALELISMO DE PRECIOS":"Art. 56 LFCE","POSICIÓN DOMINANTE":"Art. 56 LFCE","PRECIOS PREDATORIOS":"Art. 56 fracc. VII LFCE","CONCENTRACIÓN":"Art. 61 LFCE"}, sanction:"Multas hasta el 10% de los ingresos anuales." },
+  "Brasil":{ authority:"CADE", law:"Lei 12.529/2011", rules:{"FIJACIÓN DE PRECIOS":"Art. 36 §3º I","ALZA SIMULTÁNEA":"Art. 36 §3º","PARALELISMO DE PRECIOS":"Art. 36 II","POSICIÓN DOMINANTE":"Art. 36 §2º","PRECIOS PREDATORIOS":"Art. 36 §3º XV","CONCENTRACIÓN":"Art. 88"}, sanction:"Multa de 0,1% a 20% do faturamento bruto." },
+  "Argentina":{ authority:"CNDC", law:"Ley 27.442/2018", rules:{"FIJACIÓN DE PRECIOS":"Art. 2º a)","ALZA SIMULTÁNEA":"Art. 2º a)","PARALELISMO DE PRECIOS":"Art. 3º","POSICIÓN DOMINANTE":"Art. 3º","PRECIOS PREDATORIOS":"Art. 3º i)","CONCENTRACIÓN":"Art. 8º"}, sanction:"Multas de hasta el 30% de la facturación." },
+  "Chile":{ authority:"FNE y TDLC", law:"Decreto Ley 211/1973", rules:{"FIJACIÓN DE PRECIOS":"Art. 3º a) DL 211","ALZA SIMULTÁNEA":"Art. 3º a) DL 211","PARALELISMO DE PRECIOS":"Art. 3º DL 211","POSICIÓN DOMINANTE":"Art. 3º b) DL 211","PRECIOS PREDATORIOS":"Art. 3º b) DL 211","CONCENTRACIÓN":"Art. 48 DL 211"}, sanction:"Multas hasta 30.000 UTA (~USD 20M)." },
+  "Perú":{ authority:"INDECOPI", law:"Decreto Legislativo 1034/2008", rules:{"FIJACIÓN DE PRECIOS":"Art. 11.1 DL 1034","ALZA SIMULTÁNEA":"Art. 11.1 DL 1034","PARALELISMO DE PRECIOS":"Art. 11 DL 1034","POSICIÓN DOMINANTE":"Art. 10 DL 1034","PRECIOS PREDATORIOS":"Art. 10.2 e) DL 1034","CONCENTRACIÓN":"Ley 31112/2021"}, sanction:"Multas hasta 1.000 UIT o el 12% de ventas anuales." },
+  "Ecuador":{ authority:"Superintendencia de Control del Poder de Mercado (SCPM)", law:"Ley Orgánica de Regulación y Control del Poder de Mercado (LORCPM)", rules:{"FIJACIÓN DE PRECIOS":"Art. 11 LORCPM","ALZA SIMULTÁNEA":"Art. 11 LORCPM","PARALELISMO DE PRECIOS":"Art. 11 LORCPM","POSICIÓN DOMINANTE":"Art. 9 LORCPM","PRECIOS PREDATORIOS":"Art. 9 lit. b) LORCPM","CONCENTRACIÓN":"Art. 14 LORCPM"}, sanction:"Multas hasta el 12% de los ingresos totales del año anterior." },
+  "Bolivia":{ authority:"Autoridad de Fiscalización y Control Social de Empresas (AEMP)", law:"Decreto Supremo 29519/2008 y Ley 516/2014", rules:{"FIJACIÓN DE PRECIOS":"Art. 10 DS 29519","ALZA SIMULTÁNEA":"Art. 10 DS 29519","PARALELISMO DE PRECIOS":"Art. 10 DS 29519","POSICIÓN DOMINANTE":"Art. 9 DS 29519","PRECIOS PREDATORIOS":"Art. 9 DS 29519","CONCENTRACIÓN":"Art. 15 DS 29519"}, sanction:"Multas de hasta el 10% de los ingresos anuales." },
+  "Paraguay":{ authority:"Comisión Nacional de la Competencia (CNC)", law:"Ley 4956/2013 de Defensa de la Competencia", rules:{"FIJACIÓN DE PRECIOS":"Art. 6 Ley 4956","ALZA SIMULTÁNEA":"Art. 6 Ley 4956","PARALELISMO DE PRECIOS":"Art. 6 Ley 4956","POSICIÓN DOMINANTE":"Art. 7 Ley 4956","PRECIOS PREDATORIOS":"Art. 7 Ley 4956","CONCENTRACIÓN":"Art. 12 Ley 4956"}, sanction:"Multas de hasta 20.000 salarios mínimos." },
+  "Uruguay":{ authority:"Comisión de Promoción y Defensa de la Competencia (CPDC)", law:"Ley 18.159/2007 de Promoción y Defensa de la Competencia", rules:{"FIJACIÓN DE PRECIOS":"Art. 4 Ley 18.159","ALZA SIMULTÁNEA":"Art. 4 Ley 18.159","PARALELISMO DE PRECIOS":"Art. 4 Ley 18.159","POSICIÓN DOMINANTE":"Art. 5 Ley 18.159","PRECIOS PREDATORIOS":"Art. 5 Ley 18.159","CONCENTRACIÓN":"Art. 7 Ley 18.159"}, sanction:"Multas de hasta 20.000 UR (Unidades Reajustables)." },
+  "España":{ authority:"CNMC", law:"Ley 15/2007 + Art. 101-102 TFUE", rules:{"FIJACIÓN DE PRECIOS":"Art. 1 LDC / Art. 101 TFUE","ALZA SIMULTÁNEA":"Art. 1 LDC","PARALELISMO DE PRECIOS":"Art. 1 LDC","POSICIÓN DOMINANTE":"Art. 2 LDC / Art. 102 TFUE","PRECIOS PREDATORIOS":"Art. 2.2 b) LDC","CONCENTRACIÓN":"Art. 7 LDC"}, sanction:"Multas hasta el 10% del volumen de negocios mundial." },
   "Francia":{ authority:"Autorité de la Concurrence", law:"Code de commerce Art. L420-1 + Art. 101-102 TFUE", rules:{"FIJACIÓN DE PRECIOS":"Art. L420-1","ALZA SIMULTÁNEA":"Art. L420-1","PARALELISMO DE PRECIOS":"Art. L420-1","POSICIÓN DOMINANTE":"Art. L420-2","PRECIOS PREDATORIOS":"Art. L420-5","CONCENTRACIÓN":"Art. L430-1"}, sanction:"Sanction jusqu'à 10% du chiffre d'affaires mondial." },
   "Alemania":{ authority:"Bundeskartellamt (BKartA)", law:"GWB + Art. 101-102 TFUE", rules:{"FIJACIÓN DE PRECIOS":"§1 GWB / Art. 101 TFUE","ALZA SIMULTÁNEA":"§1 GWB","PARALELISMO DE PRECIOS":"§1 GWB","POSICIÓN DOMINANTE":"§18-19 GWB","PRECIOS PREDATORIOS":"§19 GWB","CONCENTRACIÓN":"§35 GWB"}, sanction:"Geldbußen bis zu 10% des weltweiten Jahresumsatzes." },
-  "Italia":{ authority:"Autorità Garante della Concorrenza e del Mercato (AGCM)", law:"Legge 287/1990 + Art. 101-102 TFUE", rules:{"FIJACIÓN DE PRECIOS":"Art. 2 L.287/1990","ALZA SIMULTÁNEA":"Art. 2 L.287/1990","PARALELISMO DE PRECIOS":"Art. 2 L.287/1990","POSICIÓN DOMINANTE":"Art. 3 L.287/1990","PRECIOS PREDATORIOS":"Art. 3 L.287/1990","CONCENTRACIÓN":"Art. 16 L.287/1990"}, sanction:"Sanzioni fino al 10% del fatturato." },
+  "Italia":{ authority:"AGCM", law:"Legge 287/1990 + Art. 101-102 TFUE", rules:{"FIJACIÓN DE PRECIOS":"Art. 2 L.287/1990","ALZA SIMULTÁNEA":"Art. 2 L.287/1990","PARALELISMO DE PRECIOS":"Art. 2 L.287/1990","POSICIÓN DOMINANTE":"Art. 3 L.287/1990","PRECIOS PREDATORIOS":"Art. 3 L.287/1990","CONCENTRACIÓN":"Art. 16 L.287/1990"}, sanction:"Sanzioni fino al 10% del fatturato." },
   "Reino Unido":{ authority:"Competition and Markets Authority (CMA)", law:"Competition Act 1998 + Enterprise Act 2002", rules:{"FIJACIÓN DE PRECIOS":"Chapter I, CA 1998","ALZA SIMULTÁNEA":"Chapter I, CA 1998","PARALELISMO DE PRECIOS":"Chapter I, CA 1998","POSICIÓN DOMINANTE":"Chapter II, CA 1998","PRECIOS PREDATORIOS":"Chapter II, CA 1998","CONCENTRACIÓN":"Part 3, EA 2002"}, sanction:"Fines up to 10% of annual worldwide turnover." },
-  "Estados Unidos":{ authority:"Federal Trade Commission (FTC) / DOJ", law:"Sherman Act (1890) + Clayton Act (1914)", rules:{"FIJACIÓN DE PRECIOS":"§1 Sherman Act","ALZA SIMULTÁNEA":"§1 Sherman Act","PARALELISMO DE PRECIOS":"§1 Sherman Act","POSICIÓN DOMINANTE":"§2 Sherman Act","PRECIOS PREDATORIOS":"§2 Sherman Act","CONCENTRACIÓN":"§7 Clayton Act"}, sanction:"Criminal fines up to $100M. Up to 10 years imprisonment." },
+  "Portugal":{ authority:"Autoridade da Concorrência (AdC)", law:"Lei 19/2012 — Lei da Concorrência", rules:{"FIJACIÓN DE PRECIOS":"Art. 11 Lei 19/2012","ALZA SIMULTÁNEA":"Art. 11 Lei 19/2012","PARALELISMO DE PRECIOS":"Art. 11 Lei 19/2012","POSICIÓN DOMINANTE":"Art. 12 Lei 19/2012","PRECIOS PREDATORIOS":"Art. 12 Lei 19/2012","CONCENTRACIÓN":"Art. 37 Lei 19/2012"}, sanction:"Coima até 10% do volume de negócios total." },
+  "Países Bajos":{ authority:"Autoriteit Consument en Markt (ACM)", law:"Mededingingswet (Mw) + Art. 101-102 TFUE", rules:{"FIJACIÓN DE PRECIOS":"Art. 6 Mw / Art. 101 TFUE","ALZA SIMULTÁNEA":"Art. 6 Mw","PARALELISMO DE PRECIOS":"Art. 6 Mw","POSICIÓN DOMINANTE":"Art. 24 Mw / Art. 102 TFUE","PRECIOS PREDATORIOS":"Art. 24 Mw","CONCENTRACIÓN":"Art. 34 Mw"}, sanction:"Boetes tot 10% van de wereldwijde jaaromzet." },
+  "Suecia":{ authority:"Konkurrensverket (KKV)", law:"Konkurrenslag (2008:579) + Art. 101-102 TFUE", rules:{"FIJACIÓN DE PRECIOS":"2 kap. 1 § KL / Art. 101 TFUE","ALZA SIMULTÁNEA":"2 kap. 1 § KL","PARALELISMO DE PRECIOS":"2 kap. 1 § KL","POSICIÓN DOMINANTE":"2 kap. 7 § KL / Art. 102 TFUE","PRECIOS PREDATORIOS":"2 kap. 7 § KL","CONCENTRACIÓN":"4 kap. 1 § KL"}, sanction:"Konkurrensskadeavgift upp till 10% av omsättningen." },
+  "Polonia":{ authority:"Urząd Ochrony Konkurencji i Konsumentów (UOKiK)", law:"Ustawa o ochronie konkurencji i konsumentów (2007) + Art. 101-102 TFUE", rules:{"FIJACIÓN DE PRECIOS":"Art. 6 UOKiK / Art. 101 TFUE","ALZA SIMULTÁNEA":"Art. 6 UOKiK","PARALELISMO DE PRECIOS":"Art. 6 UOKiK","POSICIÓN DOMINANTE":"Art. 9 UOKiK / Art. 102 TFUE","PRECIOS PREDATORIOS":"Art. 9 UOKiK","CONCENTRACIÓN":"Art. 13 UOKiK"}, sanction:"Kara pieniężna do 10% obrotu osiągniętego w roku poprzedzającym." },
+  "Estados Unidos":{ authority:"FTC / DOJ", law:"Sherman Act (1890) + Clayton Act (1914)", rules:{"FIJACIÓN DE PRECIOS":"§1 Sherman Act","ALZA SIMULTÁNEA":"§1 Sherman Act","PARALELISMO DE PRECIOS":"§1 Sherman Act","POSICIÓN DOMINANTE":"§2 Sherman Act","PRECIOS PREDATORIOS":"§2 Sherman Act","CONCENTRACIÓN":"§7 Clayton Act"}, sanction:"Criminal fines up to $100M. Up to 10 years imprisonment." },
   "Canadá":{ authority:"Competition Bureau Canada", law:"Competition Act (R.S.C. 1985)", rules:{"FIJACIÓN DE PRECIOS":"§45 Competition Act","ALZA SIMULTÁNEA":"§45 Competition Act","PARALELISMO DE PRECIOS":"§90.1 Competition Act","POSICIÓN DOMINANTE":"§78-79 Competition Act","PRECIOS PREDATORIOS":"§78(1)(i) Competition Act","CONCENTRACIÓN":"§92 Competition Act"}, sanction:"Fines up to $25M. Up to 14 years imprisonment." },
+  "China":{ authority:"Administración Estatal para la Regulación del Mercado (SAMR)", law:"Ley Antimonopolio de China (AML) 2022", rules:{"FIJACIÓN DE PRECIOS":"Art. 17 AML — Acuerdos monopolísticos sobre precios","ALZA SIMULTÁNEA":"Art. 17 AML — Coordinación de precios entre operadores","PARALELISMO DE PRECIOS":"Art. 17 AML — Conducta paralela con efecto anticompetitivo","POSICIÓN DOMINANTE":"Art. 22 AML — Abuso de posición dominante en el mercado","PRECIOS PREDATORIOS":"Art. 22(1) AML — Venta por debajo del costo con fin exclusorio","CONCENTRACIÓN":"Art. 28 AML — Concentraciones con efecto de eliminación o restricción de la competencia"}, sanction:"Multas de 1% a 10% de las ventas del año anterior. Hasta 5 millones de RMB para conductas no implementadas." },
   "Japón":{ authority:"Japan Fair Trade Commission (JFTC)", law:"Antimonopoly Act (1947)", rules:{"FIJACIÓN DE PRECIOS":"Art. 3 AMA","ALZA SIMULTÁNEA":"Art. 3 AMA","PARALELISMO DE PRECIOS":"Art. 3 AMA","POSICIÓN DOMINANTE":"Art. 2(5) AMA","PRECIOS PREDATORIOS":"Art. 2(9) AMA","CONCENTRACIÓN":"Art. 10-16 AMA"}, sanction:"Surcharges up to 10% of sales." },
   "Corea del Sur":{ authority:"Korea Fair Trade Commission (KFTC)", law:"Monopoly Regulation and Fair Trade Act (MRFTA)", rules:{"FIJACIÓN DE PRECIOS":"Art. 40 MRFTA","ALZA SIMULTÁNEA":"Art. 40 MRFTA","PARALELISMO DE PRECIOS":"Art. 40 MRFTA","POSICIÓN DOMINANTE":"Art. 5 MRFTA","PRECIOS PREDATORIOS":"Art. 5(1)(iii) MRFTA","CONCENTRACIÓN":"Art. 11 MRFTA"}, sanction:"Surcharges up to 20% of related sales." },
   "India":{ authority:"Competition Commission of India (CCI)", law:"Competition Act 2002 (amended 2023)", rules:{"FIJACIÓN DE PRECIOS":"§3(3)(a)","ALZA SIMULTÁNEA":"§3(3)","PARALELISMO DE PRECIOS":"§3(3)","POSICIÓN DOMINANTE":"§4","PRECIOS PREDATORIOS":"§4(2)(a)(ii)","CONCENTRACIÓN":"§5-6"}, sanction:"Penalty up to 10% of average turnover for 3 years." },
 };
 
+// ─── MARKETS ──────────────────────────────────────────────────────────────────
 const MARKETS = {
-  "Energía":{
-    products:["Gasolina Regular","Gasolina Premium","ACPM / Diésel","Gas Natural","Energía Eléctrica","Carbón","Etanol","Gas Licuado (GLP)"],
+  "Energía":{ products:["Gasolina Regular","Gasolina Premium","ACPM / Diésel","Gas Natural","Energía Eléctrica","Gas Licuado (GLP)","Carbón","Energía Solar"],
     companiesByCountry:{
-      "Colombia":{"Gasolina Regular":["Terpel","Biomax","Texaco","Primax","Zeuss"],"Gasolina Premium":["Terpel","Biomax","Texaco","Primax"],"ACPM / Diésel":["Terpel","Biomax","Texaco","EDS Uno"],"Gas Natural":["Gas Natural","Surtigas","Gases de Occidente"],"Energía Eléctrica":["EPM","Codensa","Celsia","Emcali","CHEC"],"Carbón":["Drummond","Cerrejón","Prodeco","CNR"],"Etanol":["Incauca","Manuelita","Providencia","Mayagüez"],"Gas Licuado (GLP)":["Terpel GLP","Biomax GLP","Zeta Gas","Surtigas"]},
-      "México":{"Gasolina Regular":["PEMEX","BP México","Shell México","Total México"],"Gasolina Premium":["PEMEX","BP México","Shell México"],"ACPM / Diésel":["PEMEX","BP México","Repsol México"],"Gas Natural":["Gas Natural Fenosa","Naturgy México","Sempra"],"Energía Eléctrica":["CFE","Iberdrola México","EDF México","Total Energies"],"Carbón":["Minera Carbonífera Río Escondido","Altos Hornos de México"],"Etanol":["DICONSA","Beta San Miguel","Zucarmex"],"Gas Licuado (GLP)":["Zeta Gas","Gas Express","Tomza","Repsol GLP"]},
-      "Brasil":{"Gasolina Regular":["Petrobras","Shell Brasil","BP Castrol","Ipiranga"],"Gasolina Premium":["Petrobras","Shell Brasil","Ipiranga"],"ACPM / Diésel":["Petrobras","Shell Brasil","Raízen"],"Gas Natural":["Comgás","CEG","BR Distribuidora"],"Energía Eléctrica":["Eletrobras","Cemig","Copel","CPFL","Enel Brasil"],"Carbón":["Vale","CSN","Gerdau"],"Etanol":["Raízen","São Martinho","Biosev","Usaçúcar"],"Gas Licuado (GLP)":["Petrobras GLP","Liquigás","SHV Gas","Supergasbrás"]},
-      "Argentina":{"Gasolina Regular":["YPF","Shell Argentina","Axion Energy","Puma Energy"],"Gasolina Premium":["YPF","Shell Argentina","Axion Energy"],"ACPM / Diésel":["YPF","Shell Argentina","Axion Energy"],"Gas Natural":["Metrogas","Camuzzi Gas","Litoral Gas"],"Energía Eléctrica":["Edenor","Edesur","Endesa Argentina","AES Argentina"],"Carbón":["YPF","Pan American Energy"],"Etanol":["Bio4","Promaíz","ACA Bio"],"Gas Licuado (GLP)":["YPF GLP","Shell GLP","Repsol GLP","Total GLP"]},
-      "Chile":{"Gasolina Regular":["COPEC","Shell Chile","Petrobras Chile","Terpel Chile"],"Gasolina Premium":["COPEC","Shell Chile","Petrobras Chile"],"ACPM / Diésel":["COPEC","Shell Chile","Enex"],"Gas Natural":["GasValpo","Metrogas","GasSur"],"Energía Eléctrica":["Enel Chile","Colbún","AES Gener","CGE"],"Carbón":["COPEC","Engie Chile"],"Etanol":["ENAP","COPEC"],"Gas Licuado (GLP)":["ABASTIBLE","GASCO","Lipigas","Copec GLP"]},
-      "Perú":{"Gasolina Regular":["Petroperú","Repsol Perú","PECSA","Primax Perú"],"Gasolina Premium":["Petroperú","Repsol Perú","PECSA"],"ACPM / Diésel":["Petroperú","Repsol Perú","Primax Perú"],"Gas Natural":["Cálidda","Contugas","Quavii"],"Energía Eléctrica":["Enel Perú","Luz del Sur","Edelnor","Enosa"],"Carbón":["Southern Perú","Glencore Perú"],"Etanol":["Maple Etanol","Caña Brava"],"Gas Licuado (GLP)":["Repsol GLP","ZETA GAS","Lima Gas","Llamagas"]},
-      "Francia":{"Gasolina Regular":["Total Energies","BP Francia","Shell Francia","Esso Francia"],"Gasolina Premium":["Total Energies","BP Francia","Shell Francia"],"ACPM / Diésel":["Total Energies","BP Francia","Esso Francia"],"Gas Natural":["Engie","Total Energies","EDF","Eni Francia"],"Energía Eléctrica":["EDF","Engie","Total Energies","Vattenfall"],"Carbón":["EDF","Engie"],"Etanol":["Cristanol","Tereos","Lillebonne"],"Gas Licuado (GLP)":["Butagaz","Totalgaz","Antargaz","Primagaz"]},
-      "Alemania":{"Gasolina Regular":["Aral","Shell Alemania","Esso Alemania","Total Alemania"],"Gasolina Premium":["Aral","Shell Alemania","Esso Alemania"],"ACPM / Diésel":["Aral","Shell Alemania","Total Alemania"],"Gas Natural":["E.ON","RWE","EnBW","Vattenfall"],"Energía Eléctrica":["E.ON","RWE","EnBW","Vattenfall","Innogy"],"Carbón":["RWE","Leag","Mibrag"],"Etanol":["Südzucker","CropEnergies","Verbio"],"Gas Licuado (GLP)":["Primagas","Progas","Flaga","Shell Gas"]},
-      "Italia":{"Gasolina Regular":["ENI","Q8","IP","TotalEnergies Italia"],"Gasolina Premium":["ENI","Q8","IP"],"ACPM / Diésel":["ENI","Q8","TotalEnergies Italia"],"Gas Natural":["ENI Gas","Edison","A2A","Enel Gas"],"Energía Eléctrica":["Enel Italia","A2A","Iren","Edison"],"Carbón":["Enel Italia","A2A"],"Etanol":["Novaol","Ital-Bi-Oil"],"Gas Licuado (GLP)":["ENI GPL","Liquigas Italia","Supergasitalia","Butangas"]},
-      "Reino Unido":{"Gasolina Regular":["BP UK","Shell UK","Esso UK","Texaco UK"],"Gasolina Premium":["BP UK","Shell UK","Esso UK"],"ACPM / Diésel":["BP UK","Shell UK","Texaco UK"],"Gas Natural":["British Gas","EDF UK","E.ON UK","SSE"],"Energía Eléctrica":["British Gas","EDF UK","E.ON UK","SSE","Octopus"],"Carbón":["UK Coal","RWE UK"],"Etanol":["Vivergo","Ensus","ABF"],"Gas Licuado (GLP)":["Calor Gas","Flogas","AvantiGas","Primagas UK"]},
-      "Canadá":{"Gasolina Regular":["Petro-Canada","Esso Canadá","Shell Canadá","Husky"],"Gasolina Premium":["Petro-Canada","Esso Canadá","Shell Canadá"],"ACPM / Diésel":["Petro-Canada","Esso Canadá","Husky"],"Gas Natural":["Enbridge","TC Energy","ATCO Gas","FortisBC"],"Energía Eléctrica":["Hydro-Québec","BC Hydro","Ontario Power","ATCO Electric"],"Carbón":["Teck Resources","Fording Coal"],"Etanol":["GreenField Ethanol","Husky Energy","The Sask Wheat Pool"],"Gas Licuado (GLP)":["Superior Plus","Parkland","McLeod Propane"]},
-      "Japón":{"Gasolina Regular":["ENEOS","Idemitsu","Cosmo Oil","Showa Shell"],"Gasolina Premium":["ENEOS","Idemitsu","Cosmo Oil"],"ACPM / Diésel":["ENEOS","Idemitsu","Cosmo Oil"],"Gas Natural":["Tokyo Gas","Osaka Gas","Toho Gas","Saibu Gas"],"Energía Eléctrica":["TEPCO","Kansai Electric","Chubu Electric","Kyushu Electric"],"Carbón":["Mitsubishi","Mitsui","Marubeni"],"Etanol":["Japan Alcohol Trading","Daicel"],"Gas Licuado (GLP)":["Iwatani","Nippon Gas","Showa Shell LPG","ENEOS LPG"]},
-      "Corea del Sur":{"Gasolina Regular":["SK Energy","GS Caltex","S-Oil","Hyundai Oilbank"],"Gasolina Premium":["SK Energy","GS Caltex","S-Oil"],"ACPM / Diésel":["SK Energy","GS Caltex","S-Oil"],"Gas Natural":["KOGAS","SK E&S","GS Energy","Posco Energy"],"Energía Eléctrica":["KEPCO","Korea Western Power","Korea South Power","Korea Midland Power"],"Carbón":["KEPCO","Posco","Korea Coal"],"Etanol":["CJ BIO","Lotte Chemical"],"Gas Licuado (GLP)":["SK Gas","E1","S-Oil LPG","Elim LPG"]},
-      "India":{"Gasolina Regular":["Indian Oil","Bharat Petroleum","Hindustan Petroleum","Reliance"],"Gasolina Premium":["Indian Oil","Bharat Petroleum","Hindustan Petroleum"],"ACPM / Diésel":["Indian Oil","Bharat Petroleum","Hindustan Petroleum"],"Gas Natural":["GAIL","Indraprastha Gas","Mahanagar Gas","Gujarat Gas"],"Energía Eléctrica":["NTPC","Power Grid","Adani Power","Tata Power"],"Carbón":["Coal India","SCCL","Adani Enterprises"],"Etanol":["Indian Oil","Bharat Petroleum","Manaksia"],"Gas Licuado (GLP)":["Indian Oil LPG","Bharat Gas","HP Gas","Reliance Gas"]},
-      "España":{"Gasolina Regular":["Repsol","Cepsa","BP España","Galp"],"Gasolina Premium":["Repsol","Cepsa","BP España"],"ACPM / Diésel":["Repsol","Cepsa","Total España"],"Gas Natural":["Naturgy","Endesa Gas","Iberdrola Gas"],"Energía Eléctrica":["Endesa","Iberdrola","Naturgy","EDP España","Acciona"],"Carbón":["Endesa Generación","Naturgy Carbón"],"Etanol":["Abengoa","Ebro Foods","Ence"],"Gas Licuado (GLP)":["Repsol Butano","Cepsa GLP","Primagas","Disa"]},
-      "Estados Unidos":{"Gasolina Regular":["ExxonMobil","Shell USA","Chevron","BP America"],"Gasolina Premium":["ExxonMobil","Shell USA","Chevron"],"ACPM / Diésel":["ExxonMobil","Shell USA","Valero"],"Gas Natural":["Dominion Energy","Con Edison","Sempra"],"Energía Eléctrica":["Duke Energy","NextEra","Southern Company","Exelon","AES"],"Carbón":["Arch Resources","CONSOL Energy","Alpha Natural"],"Etanol":["POET","ADM","Green Plains","Valero Renewables"],"Gas Licuado (GLP)":["AmeriGas","Ferrellgas","Suburban Propane","NGL Energy"]},
-      "default":{"Gasolina Regular":["Company A","Company B","Company C","Company D"],"Gasolina Premium":["Company A","Company B","Company C"],"ACPM / Diésel":["Company A","Company B","Company C"],"Gas Natural":["Company A","Company B","Company C"],"Energía Eléctrica":["Utility A","Utility B","Utility C"],"Carbón":["Mining A","Mining B","Mining C"],"Etanol":["Ethanol A","Ethanol B","Ethanol C"],"Gas Licuado (GLP)":["GLP A","GLP B","GLP C"]},
+      "Colombia":{"Gasolina Regular":["Terpel","Biomax","Texaco","Primax","Zeuss"],"Gasolina Premium":["Terpel","Biomax","Texaco","Primax"],"ACPM / Diésel":["Terpel","Biomax","Texaco","EDS Uno"],"Gas Natural":["Gas Natural","Surtigas","Gases de Occidente"],"Energía Eléctrica":["EPM","Codensa","Celsia","Emcali","CHEC"],"Gas Licuado (GLP)":["Terpel GLP","Biomax GLP","Zeta Gas","Surtigas"],"Carbón":["Drummond","Cerrejón","Prodeco","CNR"],"Energía Solar":["Celsia Solar","EPM Solar","Enel Green Power","Isagen"]},
+      "China":{"Gasolina Regular":["Sinopec","PetroChina","CNOOC","Sinoil"],"Gasolina Premium":["Sinopec","PetroChina","CNOOC"],"ACPM / Diésel":["Sinopec","PetroChina","CNOOC"],"Gas Natural":["PetroChina Gas","Sinopec Gas","ENN Energy","China Gas"],"Energía Eléctrica":["State Grid","China Southern Power","China Datang","Huaneng"],"Gas Licuado (GLP)":["Sinopec LPG","PetroChina LPG","China Resources Gas","ENN Energy"],"Carbón":["China Shenhua","China Coal Energy","Datong Coal","Yanzhou Coal"],"Energía Solar":["LONGi Solar","JA Solar","Trina Solar","Canadian Solar"]},
+      "Ecuador":{"Gasolina Regular":["Petroecuador","Primax Ecuador","Terpel Ecuador","Repsol Ecuador"],"Gasolina Premium":["Petroecuador","Primax Ecuador","Terpel Ecuador"],"ACPM / Diésel":["Petroecuador","Primax Ecuador","Terpel Ecuador"],"Gas Natural":["Petroecuador Gas","City Gas","Gas del Litoral"],"Energía Eléctrica":["CELEC","EEQ","CNEL","Emelnorte"],"Gas Licuado (GLP)":["Petroecuador GLP","Duragas","Congas","Agip Gas"],"Carbón":["Petroecuador"],"Energía Solar":["Elecaustro","CELEC Solar"]},
+      "Bolivia":{"Gasolina Regular":["YPFB","Petrobras Bolivia","Repsol Bolivia"],"Gasolina Premium":["YPFB","Petrobras Bolivia"],"ACPM / Diésel":["YPFB","Petrobras Bolivia","Repsol Bolivia"],"Gas Natural":["YPFB Gas","TBG","Transredes"],"Energía Eléctrica":["ENDE","Corani","Valle Hermoso","Guaracachi"],"Gas Licuado (GLP)":["YPFB GLP","Embol","Trafigura Bolivia"],"Carbón":["YPFB"],"Energía Solar":["ENDE Solar","Bolivia Solar"]},
+      "Portugal":{"Gasolina Regular":["Galp","BP Portugal","Repsol Portugal","Shell Portugal"],"Gasolina Premium":["Galp","BP Portugal","Repsol Portugal"],"ACPM / Diésel":["Galp","BP Portugal","Total Portugal"],"Gas Natural":["Galp Gás","EDP Gás","Iberdrola Portugal"],"Energía Eléctrica":["EDP","Galp Energia","Endesa Portugal","Iberdrola Portugal"],"Gas Licuado (GLP)":["Galp GPL","Repsol GPL","Rubis Portugal"],"Carbón":["EDP Produção"],"Energía Solar":["EDP Renewables","Galp Solar","Iberdrola Solar"]},
+      "Países Bajos":{"Gasolina Regular":["Shell NL","BP Netherlands","TotalEnergies NL","Esso NL"],"Gasolina Premium":["Shell NL","BP Netherlands","TotalEnergies NL"],"ACPM / Diésel":["Shell NL","BP Netherlands","TotalEnergies NL"],"Gas Natural":["Vattenfall NL","Eneco","Nuon","Budget Energie"],"Energía Eléctrica":["Vattenfall NL","Eneco","Nuon","Greenchoice"],"Gas Licuado (GLP)":["SHV Gas NL","Primagas NL","Calor NL"],"Carbón":["Vattenfall NL","RWE NL"],"Energía Solar":["Eneco Solar","Vattenfall Solar","Nuon Solar"]},
+      "default":{"Gasolina Regular":["Company A","Company B","Company C","Company D"],"Gasolina Premium":["Company A","Company B","Company C"],"ACPM / Diésel":["Company A","Company B","Company C"],"Gas Natural":["Company A","Company B","Company C"],"Energía Eléctrica":["Utility A","Utility B","Utility C"],"Gas Licuado (GLP)":["GLP A","GLP B","GLP C"],"Carbón":["Mining A","Mining B","Mining C"],"Energía Solar":["Solar A","Solar B","Solar C"]},
     }
   },
-  "Telecomunicaciones":{
-    products:["Internet Hogar 100Mbps","Internet Hogar 300Mbps","Internet Hogar 1Gbps","Telefonía Móvil Postpago","Telefonía Móvil Prepago","TV por Suscripción","Telefonía Fija","Roaming Internacional"],
+  "Telecomunicaciones":{ products:["Internet Hogar 100Mbps","Internet Hogar 300Mbps","Internet Hogar 1Gbps","Telefonía Móvil Postpago","Telefonía Móvil Prepago","TV por Suscripción","Telefonía Fija","Roaming Internacional","Streaming Música","Streaming Video"],
     companiesByCountry:{
-      "Colombia":{"Internet Hogar 100Mbps":["Claro","Movistar","ETB","Tigo","Une"],"Internet Hogar 300Mbps":["Claro","Movistar","Tigo","Une"],"Internet Hogar 1Gbps":["Claro","ETB","Tigo","Une"],"Telefonía Móvil Postpago":["Claro","Movistar","Tigo","WOM"],"Telefonía Móvil Prepago":["Claro","Movistar","Tigo","WOM","Virgin"],"TV por Suscripción":["Claro","Movistar","DirecTV","Tigo"],"Telefonía Fija":["ETB","Claro","Movistar","Tigo"],"Roaming Internacional":["Claro","Movistar","Tigo","WOM"]},
-      "México":{"Internet Hogar 100Mbps":["Telmex","Izzi","Totalplay","Megacable"],"Internet Hogar 300Mbps":["Telmex","Izzi","Totalplay","Megacable"],"Internet Hogar 1Gbps":["Telmex","Totalplay","Izzi"],"Telefonía Móvil Postpago":["Telcel","AT&T México","Movistar México"],"Telefonía Móvil Prepago":["Telcel","AT&T México","Movistar México","Oui"],"TV por Suscripción":["Izzi","Totalplay","Sky México","Megacable"],"Telefonía Fija":["Telmex","Izzi","Megacable"],"Roaming Internacional":["Telcel","AT&T México","Movistar México"]},
-      "Brasil":{"Internet Hogar 100Mbps":["Claro Brasil","Vivo","NET","Oi"],"Internet Hogar 300Mbps":["Claro Brasil","Vivo","TIM","Oi"],"Internet Hogar 1Gbps":["Claro Brasil","Vivo","NET"],"Telefonía Móvil Postpago":["Vivo","Claro Brasil","TIM","Oi"],"Telefonía Móvil Prepago":["Vivo","Claro Brasil","TIM","Oi"],"TV por Suscripción":["Sky Brasil","Claro TV","Vivo TV","NET"],"Telefonía Fija":["Oi","Claro Brasil","Vivo","TIM"],"Roaming Internacional":["Vivo","Claro Brasil","TIM","Oi"]},
-      "Argentina":{"Internet Hogar 100Mbps":["Telecom","Fibertel","Personal","Movistar Argentina"],"Internet Hogar 300Mbps":["Telecom","Fibertel","Personal"],"Internet Hogar 1Gbps":["Telecom","Fibertel","Claro Argentina"],"Telefonía Móvil Postpago":["Claro Argentina","Personal","Movistar Argentina"],"Telefonía Móvil Prepago":["Claro Argentina","Personal","Movistar Argentina","Tuenti"],"TV por Suscripción":["DirecTV Argentina","Cablevisión","Telecentro","Flow"],"Telefonía Fija":["Telecom","Movistar Argentina","Claro Argentina"],"Roaming Internacional":["Claro Argentina","Personal","Movistar Argentina"]},
-      "Chile":{"Internet Hogar 100Mbps":["Entel","Movistar Chile","WOM Chile","VTR"],"Internet Hogar 300Mbps":["Entel","Movistar Chile","VTR"],"Internet Hogar 1Gbps":["Entel","Movistar Chile","VTR","GTD"],"Telefonía Móvil Postpago":["Entel","Movistar Chile","Claro Chile","WOM Chile"],"Telefonía Móvil Prepago":["Entel","Movistar Chile","WOM Chile","Virgin Mobile"],"TV por Suscripción":["DirecTV Chile","VTR","Entel","Movistar Chile"],"Telefonía Fija":["Entel","Movistar Chile","VTR","GTD"],"Roaming Internacional":["Entel","Movistar Chile","Claro Chile","WOM Chile"]},
-      "Perú":{"Internet Hogar 100Mbps":["Movistar Perú","Claro Perú","Entel Perú","Bitel"],"Internet Hogar 300Mbps":["Movistar Perú","Claro Perú","Entel Perú"],"Internet Hogar 1Gbps":["Movistar Perú","Claro Perú"],"Telefonía Móvil Postpago":["Movistar Perú","Claro Perú","Entel Perú","Bitel"],"Telefonía Móvil Prepago":["Movistar Perú","Claro Perú","Entel Perú","Bitel"],"TV por Suscripción":["DirecTV Perú","Movistar TV","Claro TV","Best Cable"],"Telefonía Fija":["Movistar Perú","Claro Perú","Entel Perú"],"Roaming Internacional":["Movistar Perú","Claro Perú","Entel Perú","Bitel"]},
-      "España":{"Internet Hogar 100Mbps":["Movistar España","Orange España","Vodafone España","MásMóvil"],"Internet Hogar 300Mbps":["Movistar España","Orange España","Vodafone España"],"Internet Hogar 1Gbps":["Movistar España","Orange España","Digi"],"Telefonía Móvil Postpago":["Movistar España","Orange España","Vodafone España","Yoigo"],"Telefonía Móvil Prepago":["Movistar España","Orange España","Digi","Lebara"],"TV por Suscripción":["Movistar+","Orange TV","Vodafone TV","DAZN"],"Telefonía Fija":["Movistar España","Orange España","Vodafone España"],"Roaming Internacional":["Movistar España","Orange España","Vodafone España","Yoigo"]},
-      "Francia":{"Internet Hogar 100Mbps":["Orange Francia","SFR","Bouygues","Free"],"Internet Hogar 300Mbps":["Orange Francia","SFR","Bouygues","Free"],"Internet Hogar 1Gbps":["Orange Francia","SFR","Free","Bouygues"],"Telefonía Móvil Postpago":["Orange Francia","SFR","Bouygues","Free Mobile"],"Telefonía Móvil Prepago":["Orange Francia","SFR","Free Mobile","La Poste Mobile"],"TV por Suscripción":["Canal+","SFR TV","Orange TV","Free TV"],"Telefonía Fija":["Orange Francia","SFR","Bouygues","Free"],"Roaming Internacional":["Orange Francia","SFR","Bouygues","Free Mobile"]},
-      "Alemania":{"Internet Hogar 100Mbps":["Deutsche Telekom","Vodafone Alemania","O2 Alemania","1&1"],"Internet Hogar 300Mbps":["Deutsche Telekom","Vodafone Alemania","O2 Alemania"],"Internet Hogar 1Gbps":["Deutsche Telekom","Vodafone Alemania","1&1"],"Telefonía Móvil Postpago":["Deutsche Telekom","Vodafone Alemania","O2 Alemania","1&1"],"Telefonía Móvil Prepago":["Deutsche Telekom","O2 Alemania","Aldi Talk","Lidl Connect"],"TV por Suscripción":["Sky Alemania","MagentaTV","Vodafone TV","Amazon Prime"],"Telefonía Fija":["Deutsche Telekom","Vodafone Alemania","O2 Alemania","1&1"],"Roaming Internacional":["Deutsche Telekom","Vodafone Alemania","O2 Alemania"]},
-      "Italia":{"Internet Hogar 100Mbps":["TIM","Vodafone Italia","Wind Tre","Fastweb"],"Internet Hogar 300Mbps":["TIM","Vodafone Italia","Wind Tre","Fastweb"],"Internet Hogar 1Gbps":["TIM","Fastweb","Wind Tre"],"Telefonía Móvil Postpago":["TIM","Vodafone Italia","Wind Tre","Iliad"],"Telefonía Móvil Prepago":["TIM","Vodafone Italia","Wind Tre","Iliad"],"TV por Suscripción":["Sky Italia","TIM TV","Mediaset","DAZN Italia"],"Telefonía Fija":["TIM","Vodafone Italia","Wind Tre","Fastweb"],"Roaming Internacional":["TIM","Vodafone Italia","Wind Tre","Iliad"]},
-      "Reino Unido":{"Internet Hogar 100Mbps":["BT","Virgin Media","Sky UK","TalkTalk"],"Internet Hogar 300Mbps":["BT","Virgin Media","Sky UK","Hyperoptic"],"Internet Hogar 1Gbps":["BT","Virgin Media","Hyperoptic","Gigaclear"],"Telefonía Móvil Postpago":["EE","O2 UK","Vodafone UK","Three UK"],"Telefonía Móvil Prepago":["EE","O2 UK","Vodafone UK","giffgaff"],"TV por Suscripción":["Sky UK","BT Sport","Virgin Media TV","NOW TV"],"Telefonía Fija":["BT","Virgin Media","Sky UK","TalkTalk"],"Roaming Internacional":["EE","O2 UK","Vodafone UK","Three UK"]},
-      "Estados Unidos":{"Internet Hogar 100Mbps":["Comcast Xfinity","AT&T","Verizon","Charter Spectrum"],"Internet Hogar 300Mbps":["Comcast Xfinity","AT&T","Verizon","Charter Spectrum"],"Internet Hogar 1Gbps":["Comcast Xfinity","AT&T Fiber","Verizon Fios","Google Fiber"],"Telefonía Móvil Postpago":["Verizon","AT&T","T-Mobile","Dish"],"Telefonía Móvil Prepago":["T-Mobile","Cricket","Metro","Boost"],"TV por Suscripción":["Comcast","DirecTV USA","Dish Network","YouTube TV"],"Telefonía Fija":["AT&T","Verizon","Lumen","Frontier"],"Roaming Internacional":["Verizon","AT&T","T-Mobile","US Cellular"]},
-      "Canadá":{"Internet Hogar 100Mbps":["Bell Canadá","Rogers","Telus","Shaw"],"Internet Hogar 300Mbps":["Bell Canadá","Rogers","Telus","Shaw"],"Internet Hogar 1Gbps":["Bell Canadá","Rogers","Telus"],"Telefonía Móvil Postpago":["Bell Canadá","Rogers","Telus","Freedom"],"Telefonía Móvil Prepago":["Bell Canadá","Rogers","Telus","Chatr"],"TV por Suscripción":["Bell Canadá","Rogers","Shaw","Cogeco"],"Telefonía Fija":["Bell Canadá","Rogers","Telus","Videotron"],"Roaming Internacional":["Bell Canadá","Rogers","Telus","Freedom"]},
-      "Japón":{"Internet Hogar 100Mbps":["NTT Docomo","SoftBank","KDDI","Rakuten"],"Internet Hogar 300Mbps":["NTT Docomo","SoftBank","KDDI"],"Internet Hogar 1Gbps":["NTT Docomo","SoftBank","KDDI","Rakuten"],"Telefonía Móvil Postpago":["NTT Docomo","SoftBank","KDDI","Rakuten"],"Telefonía Móvil Prepago":["NTT Docomo","SoftBank","KDDI","IIJmio"],"TV por Suscripción":["SoftBank TV","KDDI","NTT","Rakuten TV"],"Telefonía Fija":["NTT Docomo","SoftBank","KDDI","Optage"],"Roaming Internacional":["NTT Docomo","SoftBank","KDDI","Rakuten"]},
-      "Corea del Sur":{"Internet Hogar 100Mbps":["KT","SKT","LG U+","SK Broadband"],"Internet Hogar 300Mbps":["KT","SKT","LG U+","SK Broadband"],"Internet Hogar 1Gbps":["KT","SKT","LG U+"],"Telefonía Móvil Postpago":["KT","SKT","LG U+"],"Telefonía Móvil Prepago":["KT","SKT","LG U+","CJ Hellovision"],"TV por Suscripción":["SKT","KT","LG U+","CJ ENM"],"Telefonía Fija":["KT","SKT","LG U+"],"Roaming Internacional":["KT","SKT","LG U+"]},
-      "India":{"Internet Hogar 100Mbps":["Jio","Airtel","BSNL","ACT Fibernet"],"Internet Hogar 300Mbps":["Jio","Airtel","ACT Fibernet"],"Internet Hogar 1Gbps":["Jio","Airtel","ACT Fibernet"],"Telefonía Móvil Postpago":["Jio","Airtel","Vi","BSNL"],"Telefonía Móvil Prepago":["Jio","Airtel","Vi","BSNL"],"TV por Suscripción":["Tata Sky","Airtel Digital TV","Dish TV","Sun Direct"],"Telefonía Fija":["BSNL","MTNL","Airtel","Jio"],"Roaming Internacional":["Jio","Airtel","Vi","BSNL"]},
-      "default":{"Internet Hogar 100Mbps":["Operator A","Operator B","Operator C","Operator D"],"Internet Hogar 300Mbps":["Operator A","Operator B","Operator C"],"Internet Hogar 1Gbps":["Operator A","Operator B","Operator C"],"Telefonía Móvil Postpago":["Operator A","Operator B","Operator C"],"Telefonía Móvil Prepago":["Operator A","Operator B","Operator C"],"TV por Suscripción":["Operator A","Operator B","Operator C"],"Telefonía Fija":["Operator A","Operator B","Operator C"],"Roaming Internacional":["Operator A","Operator B","Operator C"]},
+      "Colombia":{"Internet Hogar 100Mbps":["Claro","Movistar","ETB","Tigo","Une"],"Internet Hogar 300Mbps":["Claro","Movistar","Tigo","Une"],"Internet Hogar 1Gbps":["Claro","ETB","Tigo","Une"],"Telefonía Móvil Postpago":["Claro","Movistar","Tigo","WOM"],"Telefonía Móvil Prepago":["Claro","Movistar","Tigo","WOM","Virgin"],"TV por Suscripción":["Claro","Movistar","DirecTV","Tigo"],"Telefonía Fija":["ETB","Claro","Movistar","Tigo"],"Roaming Internacional":["Claro","Movistar","Tigo","WOM"],"Streaming Música":["Spotify","Apple Music","Deezer","YouTube Music"],"Streaming Video":["Netflix","Disney+","Amazon Prime","HBO Max"]},
+      "China":{"Internet Hogar 100Mbps":["China Telecom","China Unicom","China Mobile","iiNet"],"Internet Hogar 300Mbps":["China Telecom","China Unicom","China Mobile"],"Internet Hogar 1Gbps":["China Telecom","China Unicom","China Mobile"],"Telefonía Móvil Postpago":["China Mobile","China Unicom","China Telecom"],"Telefonía Móvil Prepago":["China Mobile","China Unicom","China Telecom"],"TV por Suscripción":["iQiyi","Youku","Tencent Video","Migu"],"Telefonía Fija":["China Telecom","China Unicom","China Mobile"],"Roaming Internacional":["China Mobile","China Unicom","China Telecom"],"Streaming Música":["NetEase Music","QQ Music","Kugou","Kuwo"],"Streaming Video":["iQiyi","Youku","Tencent Video","Bilibili"]},
+      "Ecuador":{"Internet Hogar 100Mbps":["CNT","Claro Ecuador","Movistar Ecuador","Netlife"],"Internet Hogar 300Mbps":["CNT","Claro Ecuador","Netlife"],"Internet Hogar 1Gbps":["CNT","Claro Ecuador","Netlife"],"Telefonía Móvil Postpago":["Claro Ecuador","Movistar Ecuador","CNT"],"Telefonía Móvil Prepago":["Claro Ecuador","Movistar Ecuador","CNT","Tuenti"],"TV por Suscripción":["CNT TV","DirecTV Ecuador","Claro TV","Netflim"],"Telefonía Fija":["CNT","Claro Ecuador","Etapa"],"Roaming Internacional":["Claro Ecuador","Movistar Ecuador","CNT"],"Streaming Música":["Spotify","Apple Music","Deezer"],"Streaming Video":["Netflix","Disney+","Amazon Prime"]},
+      "default":{"Internet Hogar 100Mbps":["Operator A","Operator B","Operator C","Operator D"],"Internet Hogar 300Mbps":["Operator A","Operator B","Operator C"],"Internet Hogar 1Gbps":["Operator A","Operator B","Operator C"],"Telefonía Móvil Postpago":["Operator A","Operator B","Operator C"],"Telefonía Móvil Prepago":["Operator A","Operator B","Operator C"],"TV por Suscripción":["Operator A","Operator B","Operator C"],"Telefonía Fija":["Operator A","Operator B","Operator C"],"Roaming Internacional":["Operator A","Operator B","Operator C"],"Streaming Música":["Platform A","Platform B","Platform C"],"Streaming Video":["Platform A","Platform B","Platform C"]},
     }
   },
-  "Alimentos":{
-    products:["Pollo Entero","Carne de Res (kg)","Aceite Vegetal 1L","Leche 1L","Arroz 1kg","Pan Tajado","Huevos (docena)","Azúcar 1kg","Harina de Trigo 1kg","Café Molido 500g"],
+  "Alimentos":{ products:["Pollo Entero","Carne de Res (kg)","Aceite Vegetal 1L","Leche 1L","Arroz 1kg","Pan Tajado","Huevos (docena)","Azúcar 1kg","Harina de Trigo 1kg","Café Molido 500g","Agua Embotellada 1.5L","Atún en lata"],
     companiesByCountry:{
-      "Colombia":{"Pollo Entero":["Éxito","Jumbo","Carulla","D1","Ara"],"Carne de Res (kg)":["Éxito","Jumbo","Carulla","La Cabaña","Pricesmart"],"Aceite Vegetal 1L":["Éxito","Jumbo","D1","Ara"],"Leche 1L":["Éxito","Jumbo","D1","Olímpica"],"Arroz 1kg":["Éxito","Jumbo","D1","La 14"],"Pan Tajado":["Éxito","Jumbo","D1","Ara","Olímpica"],"Huevos (docena)":["Éxito","Jumbo","D1","Ara","Colanta"],"Azúcar 1kg":["Éxito","Jumbo","D1","Ara","Olímpica"],"Harina de Trigo 1kg":["Éxito","Jumbo","D1","Ara"],"Café Molido 500g":["Éxito","Jumbo","Carulla","D1","Juan Valdez"]},
-      "México":{"Pollo Entero":["Walmart México","Soriana","Chedraui","La Comer"],"Carne de Res (kg)":["Walmart México","Soriana","Chedraui","Costco México"],"Aceite Vegetal 1L":["Walmart México","Soriana","Chedraui"],"Leche 1L":["Walmart México","Soriana","Oxxo"],"Arroz 1kg":["Walmart México","Soriana","Chedraui"],"Pan Tajado":["Walmart México","Soriana","Bimbo","Oxxo"],"Huevos (docena)":["Walmart México","Soriana","Chedraui","La Comer"],"Azúcar 1kg":["Walmart México","Soriana","Chedraui"],"Harina de Trigo 1kg":["Walmart México","Soriana","Maseca"],"Café Molido 500g":["Walmart México","Soriana","Oxxo","Sanborns"]},
-      "España":{"Pollo Entero":["Mercadona","Carrefour España","Lidl España","Eroski"],"Carne de Res (kg)":["Mercadona","Carrefour España","Alcampo","El Corte Inglés"],"Aceite Vegetal 1L":["Mercadona","Carrefour España","Lidl España"],"Leche 1L":["Mercadona","Carrefour España","Dia"],"Arroz 1kg":["Mercadona","Carrefour España","Lidl España"],"Pan Tajado":["Mercadona","Carrefour España","Dia","Lidl España"],"Huevos (docena)":["Mercadona","Carrefour España","Lidl España","Dia"],"Azúcar 1kg":["Mercadona","Carrefour España","Lidl España"],"Harina de Trigo 1kg":["Mercadona","Carrefour España","Dia"],"Café Molido 500g":["Mercadona","Carrefour España","El Corte Inglés","Lidl España"]},
-      "Estados Unidos":{"Pollo Entero":["Walmart USA","Kroger","Costco","Target"],"Carne de Res (kg)":["Walmart USA","Kroger","Costco","Whole Foods"],"Aceite Vegetal 1L":["Walmart USA","Kroger","Whole Foods"],"Leche 1L":["Walmart USA","Kroger","Aldi USA"],"Arroz 1kg":["Walmart USA","Kroger","Costco"],"Pan Tajado":["Walmart USA","Kroger","Target","Aldi USA"],"Huevos (docena)":["Walmart USA","Kroger","Costco","Target"],"Azúcar 1kg":["Walmart USA","Kroger","Costco","Aldi USA"],"Harina de Trigo 1kg":["Walmart USA","Kroger","Costco"],"Café Molido 500g":["Walmart USA","Kroger","Costco","Whole Foods"]},
-      "default":{"Pollo Entero":["Chain A","Chain B","Chain C","Chain D"],"Carne de Res (kg)":["Chain A","Chain B","Chain C"],"Aceite Vegetal 1L":["Chain A","Chain B","Chain C"],"Leche 1L":["Chain A","Chain B","Chain C"],"Arroz 1kg":["Chain A","Chain B","Chain C"],"Pan Tajado":["Chain A","Chain B","Chain C"],"Huevos (docena)":["Chain A","Chain B","Chain C"],"Azúcar 1kg":["Chain A","Chain B","Chain C"],"Harina de Trigo 1kg":["Chain A","Chain B","Chain C"],"Café Molido 500g":["Chain A","Chain B","Chain C"]},
+      "Colombia":{"Pollo Entero":["Éxito","Jumbo","Carulla","D1","Ara"],"Carne de Res (kg)":["Éxito","Jumbo","Carulla","La Cabaña","Pricesmart"],"Aceite Vegetal 1L":["Éxito","Jumbo","D1","Ara"],"Leche 1L":["Éxito","Jumbo","D1","Olímpica"],"Arroz 1kg":["Éxito","Jumbo","D1","La 14"],"Pan Tajado":["Éxito","Jumbo","D1","Ara"],"Huevos (docena)":["Éxito","Jumbo","D1","Colanta"],"Azúcar 1kg":["Éxito","Jumbo","D1","Ara"],"Harina de Trigo 1kg":["Éxito","Jumbo","D1","Ara"],"Café Molido 500g":["Éxito","Jumbo","Carulla","Juan Valdez"],"Agua Embotellada 1.5L":["Éxito","Jumbo","D1","Ara"],"Atún en lata":["Éxito","Jumbo","D1","Carulla"]},
+      "China":{"Pollo Entero":["JD Supermarket","Tmall","RT-Mart","Carrefour China"],"Carne de Res (kg)":["JD Supermarket","Tmall","Walmart China","Metro China"],"Aceite Vegetal 1L":["JD Supermarket","Tmall","RT-Mart","Sun Art"],"Leche 1L":["JD Supermarket","Mengniu","Yili","Bright Dairy"],"Arroz 1kg":["JD Supermarket","Tmall","RT-Mart","Hema"],"Pan Tajado":["JD Supermarket","Tmall","Breadtalk","85°C"],"Huevos (docena)":["JD Supermarket","Tmall","RT-Mart","Hema"],"Azúcar 1kg":["JD Supermarket","Tmall","RT-Mart"],"Harina de Trigo 1kg":["JD Supermarket","Tmall","RT-Mart","Sun Art"],"Café Molido 500g":["Luckin Coffee","Starbucks China","Manner","Tim Hortons China"],"Agua Embotellada 1.5L":["Nongfu Spring","Master Kong","C'estbon","Wahaha"],"Atún en lata":["JD Supermarket","Tmall","RT-Mart"]},
+      "default":{"Pollo Entero":["Chain A","Chain B","Chain C","Chain D"],"Carne de Res (kg)":["Chain A","Chain B","Chain C"],"Aceite Vegetal 1L":["Chain A","Chain B","Chain C"],"Leche 1L":["Chain A","Chain B","Chain C"],"Arroz 1kg":["Chain A","Chain B","Chain C"],"Pan Tajado":["Chain A","Chain B","Chain C"],"Huevos (docena)":["Chain A","Chain B","Chain C"],"Azúcar 1kg":["Chain A","Chain B","Chain C"],"Harina de Trigo 1kg":["Chain A","Chain B","Chain C"],"Café Molido 500g":["Chain A","Chain B","Chain C"],"Agua Embotellada 1.5L":["Chain A","Chain B","Chain C"],"Atún en lata":["Chain A","Chain B","Chain C"]},
     }
   },
-  "Seguros":{
-    products:["Seguro Auto Básico","Seguro Auto Todo Riesgo","Seguro de Vida","SOAT / Seguro Obligatorio","Seguro de Hogar","Seguro de Salud","Seguro Empresarial","Seguro de Viaje"],
+  "Seguros":{ products:["Seguro Auto Básico","Seguro Auto Todo Riesgo","Seguro de Vida","SOAT / Seguro Obligatorio","Seguro de Hogar","Seguro de Salud","Seguro Empresarial","Seguro de Viaje"],
     companiesByCountry:{
       "Colombia":{"Seguro Auto Básico":["Sura","Bolívar","Allianz","Mapfre","Axa"],"Seguro Auto Todo Riesgo":["Sura","Bolívar","Allianz","Mapfre"],"Seguro de Vida":["Sura","Bolívar","MetLife","Suramericana"],"SOAT / Seguro Obligatorio":["Sura","Bolívar","Allianz","Mapfre","Axa"],"Seguro de Hogar":["Sura","Bolívar","Allianz","Liberty"],"Seguro de Salud":["Sura","Colsanitas","Compensar","Coomeva"],"Seguro Empresarial":["Sura","Bolívar","Allianz","AIG Colombia"],"Seguro de Viaje":["Sura","Assist Card","Allianz Travel","AXA Assistance"]},
-      "España":{"Seguro Auto Básico":["Mapfre España","Allianz España","AXA España","Generali España"],"Seguro Auto Todo Riesgo":["Mapfre España","Allianz España","AXA España","Mutua Madrileña"],"Seguro de Vida":["Mapfre España","AXA España","Catalana Occidente","Caser"],"SOAT / Seguro Obligatorio":["Mapfre España","Allianz España","AXA España","Zurich"],"Seguro de Hogar":["Mapfre España","AXA España","Mutua Madrileña","Generali España"],"Seguro de Salud":["Sanitas","Adeslas","Asisa","DKV"],"Seguro Empresarial":["Mapfre España","AXA España","Zurich","Allianz España"],"Seguro de Viaje":["Mapfre España","AXA Assistance","Intermundial","Coverontrip"]},
-      "Estados Unidos":{"Seguro Auto Básico":["State Farm","Geico","Progressive","Allstate"],"Seguro Auto Todo Riesgo":["State Farm","Geico","Progressive","USAA"],"Seguro de Vida":["MetLife USA","Prudential","New York Life","Northwestern Mutual"],"SOAT / Seguro Obligatorio":["State Farm","Geico","Progressive","Liberty Mutual"],"Seguro de Hogar":["State Farm","Allstate","USAA","Liberty Mutual"],"Seguro de Salud":["UnitedHealth","Anthem","Aetna","Cigna"],"Seguro Empresarial":["Chubb","AIG USA","Hartford","Travelers"],"Seguro de Viaje":["Allianz Travel","Travel Guard","World Nomads","AXA Travel"]},
+      "China":{"Seguro Auto Básico":["PICC","Ping An","China Life","China Pacific"],"Seguro Auto Todo Riesgo":["PICC","Ping An","China Pacific","Sinosafe"],"Seguro de Vida":["China Life","Ping An Life","PICC Life","New China Life"],"SOAT / Seguro Obligatorio":["PICC","Ping An","China Pacific","China Life P&C"],"Seguro de Hogar":["PICC","Ping An","China Pacific","Taikang"],"Seguro de Salud":["China Life","Ping An Health","PICC Health","Sunshine Insurance"],"Seguro Empresarial":["PICC","Ping An","China Pacific","AIG China"],"Seguro de Viaje":["PICC","Ping An","AIG China","Allianz China"]},
       "default":{"Seguro Auto Básico":["Insurer A","Insurer B","Insurer C"],"Seguro Auto Todo Riesgo":["Insurer A","Insurer B","Insurer C"],"Seguro de Vida":["Insurer A","Insurer B","Insurer C"],"SOAT / Seguro Obligatorio":["Insurer A","Insurer B","Insurer C"],"Seguro de Hogar":["Insurer A","Insurer B","Insurer C"],"Seguro de Salud":["Insurer A","Insurer B","Insurer C"],"Seguro Empresarial":["Insurer A","Insurer B","Insurer C"],"Seguro de Viaje":["Insurer A","Insurer B","Insurer C"]},
     }
   },
-  "Farmacéutico":{
-    products:["Acetaminofén 500mg","Ibuprofeno 400mg","Amoxicilina 500mg","Omeprazol 20mg","Metformina 850mg","Atorvastatina 20mg","Losartán 50mg","Vitamina C 1000mg"],
+  "Farmacéutico":{ products:["Acetaminofén 500mg","Ibuprofeno 400mg","Amoxicilina 500mg","Omeprazol 20mg","Metformina 850mg","Atorvastatina 20mg","Losartán 50mg","Vitamina C 1000mg","Vitamina D 1000UI","Anticonceptivos orales"],
     companiesByCountry:{
-      "Colombia":{"Acetaminofén 500mg":["Colfarma","Tecnoquímicas","Lafrancol","Procaps","Bayer Colombia"],"Ibuprofeno 400mg":["Tecnoquímicas","Lafrancol","Pfizer Colombia","Abbott Colombia"],"Amoxicilina 500mg":["Lafrancol","Tecnoquímicas","GlaxoSmithKline","Colfarma"],"Omeprazol 20mg":["Tecnoquímicas","Lafrancol","AstraZeneca","Colfarma"],"Metformina 850mg":["Tecnoquímicas","Lafrancol","Sanofi Colombia","Novartis"],"Atorvastatina 20mg":["Pfizer Colombia","Tecnoquímicas","Lafrancol","MSD Colombia"],"Losartán 50mg":["MSD Colombia","Tecnoquímicas","Lafrancol","Novartis"],"Vitamina C 1000mg":["Procaps","Bayer Colombia","Lafrancol","Tecnoquímicas"]},
-      "default":{"Acetaminofén 500mg":["Pharma A","Pharma B","Pharma C","Pharma D"],"Ibuprofeno 400mg":["Pharma A","Pharma B","Pharma C"],"Amoxicilina 500mg":["Pharma A","Pharma B","Pharma C"],"Omeprazol 20mg":["Pharma A","Pharma B","Pharma C"],"Metformina 850mg":["Pharma A","Pharma B","Pharma C"],"Atorvastatina 20mg":["Pharma A","Pharma B","Pharma C"],"Losartán 50mg":["Pharma A","Pharma B","Pharma C"],"Vitamina C 1000mg":["Pharma A","Pharma B","Pharma C"]},
+      "Colombia":{"Acetaminofén 500mg":["Colfarma","Tecnoquímicas","Lafrancol","Procaps"],"Ibuprofeno 400mg":["Tecnoquímicas","Lafrancol","Pfizer Colombia","Abbott"],"Amoxicilina 500mg":["Lafrancol","Tecnoquímicas","GlaxoSmithKline","Colfarma"],"Omeprazol 20mg":["Tecnoquímicas","Lafrancol","AstraZeneca","Colfarma"],"Metformina 850mg":["Tecnoquímicas","Lafrancol","Sanofi","Novartis"],"Atorvastatina 20mg":["Pfizer Colombia","Tecnoquímicas","Lafrancol","MSD"],"Losartán 50mg":["MSD","Tecnoquímicas","Lafrancol","Novartis"],"Vitamina C 1000mg":["Procaps","Bayer Colombia","Lafrancol","Tecnoquímicas"],"Vitamina D 1000UI":["Procaps","Bayer Colombia","Lafrancol"],"Anticonceptivos orales":["Bayer Colombia","Pfizer Colombia","Laboratorios Legrand","Lafrancol"]},
+      "China":{"Acetaminofén 500mg":["Sinopharm","China Resources Pharma","Jointown","Shanghai Pharma"],"Ibuprofeno 400mg":["Sinopharm","Shanghai Pharma","China Resources","CSPC"],"Amoxicilina 500mg":["Sinopharm","CSPC","North China Pharma","Harbin Pharma"],"Omeprazol 20mg":["AstraZeneca China","Sinopharm","CSPC","Chiatai Tianqing"],"Metformina 850mg":["Sino Biopharm","Sinopharm","CSPC","Jumpcan Pharma"],"Atorvastatina 20mg":["Pfizer China","Sinopharm","CSPC","Zhejiang Hisun"],"Losartán 50mg":["MSD China","Sinopharm","CSPC","North China Pharma"],"Vitamina C 1000mg":["Sinopharm","Northeast Pharma","DSM China","CSPC"],"Vitamina D 1000UI":["Sinopharm","China Resources Pharma","DSM China"],"Anticonceptivos orales":["Bayer China","Pfizer China","Sino Pharma","Zizhu Pharma"]},
+      "default":{"Acetaminofén 500mg":["Pharma A","Pharma B","Pharma C"],"Ibuprofeno 400mg":["Pharma A","Pharma B","Pharma C"],"Amoxicilina 500mg":["Pharma A","Pharma B","Pharma C"],"Omeprazol 20mg":["Pharma A","Pharma B","Pharma C"],"Metformina 850mg":["Pharma A","Pharma B","Pharma C"],"Atorvastatina 20mg":["Pharma A","Pharma B","Pharma C"],"Losartán 50mg":["Pharma A","Pharma B","Pharma C"],"Vitamina C 1000mg":["Pharma A","Pharma B","Pharma C"],"Vitamina D 1000UI":["Pharma A","Pharma B","Pharma C"],"Anticonceptivos orales":["Pharma A","Pharma B","Pharma C"]},
     }
   },
-  "Transporte":{
-    products:["Taxi / Cabify km","Servicio de Bus","Vuelo Doméstico","Vuelo Internacional","Peaje Autopista","Servicio de Metro","Transporte de Carga","Mensajería Express"],
+  "Transporte":{ products:["Taxi / Rideshare km","Servicio de Bus","Vuelo Doméstico","Vuelo Internacional","Peaje Autopista","Servicio de Metro","Transporte de Carga","Mensajería Express","Bicicletas Compartidas","Patinetas Eléctricas"],
     companiesByCountry:{
-      "Colombia":{"Taxi / Cabify km":["Uber","Cabify","InDriver","Beat","Tappsi"],"Servicio de Bus":["Transmilenio","MIO","Metro Medellín","Megabús","Metrolínea"],"Vuelo Doméstico":["Avianca","LATAM Colombia","Wingo","EasyFly","Satena"],"Vuelo Internacional":["Avianca","LATAM","American Airlines","Copa Airlines","Air France"],"Peaje Autopista":["ANI","Concesiones viales","Devimed","Autopistas del Café"],"Servicio de Metro":["Metro Medellín","TransMilenio BRT","Metro Bogotá"],"Transporte de Carga":["Deprisa","Envía","Coordinadora","TCC","Servientrega"],"Mensajería Express":["Rappi","DomiBici","Picap","Mensajero Urbano"]},
-      "Estados Unidos":{"Taxi / Cabify km":["Uber","Lyft","Via","Curb"],"Servicio de Bus":["Greyhound","FlixBus","BoltBus","Megabus"],"Vuelo Doméstico":["Delta","United","American","Southwest","JetBlue"],"Vuelo Internacional":["Delta","United","American","Emirates","Lufthansa"],"Peaje Autopista":["E-ZPass","SunPass","FasTrak","TxTag"],"Servicio de Metro":["MTA NYC","BART","Chicago L","WMATA","MBTA"],"Transporte de Carga":["FedEx","UPS","DHL USA","USPS"],"Mensajería Express":["DoorDash","Uber Eats","Instacart","Amazon Flex"]},
-      "default":{"Taxi / Cabify km":["Transport A","Transport B","Transport C"],"Servicio de Bus":["Bus A","Bus B","Bus C"],"Vuelo Doméstico":["Airline A","Airline B","Airline C"],"Vuelo Internacional":["Airline A","Airline B","Airline C"],"Peaje Autopista":["Toll A","Toll B","Toll C"],"Servicio de Metro":["Metro A","Metro B","Metro C"],"Transporte de Carga":["Cargo A","Cargo B","Cargo C"],"Mensajería Express":["Express A","Express B","Express C"]},
+      "Colombia":{"Taxi / Rideshare km":["Uber","Cabify","InDriver","Beat","Tappsi"],"Servicio de Bus":["Transmilenio","MIO","Metro Medellín","Megabús"],"Vuelo Doméstico":["Avianca","LATAM Colombia","Wingo","EasyFly"],"Vuelo Internacional":["Avianca","LATAM","American Airlines","Copa Airlines"],"Peaje Autopista":["ANI","Devimed","Autopistas del Café","Concesiones"],"Servicio de Metro":["Metro Medellín","Metro Bogotá","TransMilenio BRT"],"Transporte de Carga":["Deprisa","Envía","Coordinadora","TCC"],"Mensajería Express":["Rappi","DomiBici","Mensajero Urbano","Lalamove"],"Bicicletas Compartidas":["EnCicla","Biciletas Públicas","Tembici Colombia"],"Patinetas Eléctricas":["Grin","Lime Colombia","Bird Colombia"]},
+      "China":{"Taxi / Rideshare km":["DiDi","Meituan","Caocao","T3"],"Servicio de Bus":["公交集团 Beijing","上海公交","广州公交","深圳公交"],"Vuelo Doméstico":["Air China","China Eastern","China Southern","Hainan Airlines"],"Vuelo Internacional":["Air China","China Eastern","China Southern","Cathay Pacific"],"Peaje Autopista":["Guotou Zhangzidao","China Merchants","CCI","Jiangsu Expressway"],"Servicio de Metro":["Beijing Metro","Shanghai Metro","Guangzhou Metro","Shenzhen Metro"],"Transporte de Carga":["SF Express","JD Logistics","ZTO Express","Cainiao"],"Mensajería Express":["Meituan","Ele.me","DiDi Food","SF Express"],"Bicicletas Compartidas":["Meituan Bike","Hello Bike","DiDi Bike"],"Patinetas Eléctricas":["Meituan Ebike","Hello Ebike","DiDi Ebike"]},
+      "default":{"Taxi / Rideshare km":["Transport A","Transport B","Transport C"],"Servicio de Bus":["Bus A","Bus B","Bus C"],"Vuelo Doméstico":["Airline A","Airline B","Airline C"],"Vuelo Internacional":["Airline A","Airline B","Airline C"],"Peaje Autopista":["Toll A","Toll B","Toll C"],"Servicio de Metro":["Metro A","Metro B","Metro C"],"Transporte de Carga":["Cargo A","Cargo B","Cargo C"],"Mensajería Express":["Express A","Express B","Express C"],"Bicicletas Compartidas":["Bike A","Bike B","Bike C"],"Patinetas Eléctricas":["Scooter A","Scooter B","Scooter C"]},
     }
   },
-  "Banca y Finanzas":{
-    products:["Cuenta de Ahorros","Tarjeta de Crédito","Crédito de Consumo","Crédito Hipotecario","Comisión Transferencia","CDT / Depósito a Plazo","Seguro de Depósitos","Nómina Empresarial"],
+  "Banca y Finanzas":{ products:["Cuenta de Ahorros","Tarjeta de Crédito","Crédito de Consumo","Crédito Hipotecario","Comisión Transferencia","CDT / Depósito a Plazo","Nómina Empresarial","Billetera Digital"],
     companiesByCountry:{
-      "Colombia":{"Cuenta de Ahorros":["Bancolombia","Davivienda","BBVA Colombia","Banco de Bogotá","Nu Colombia"],"Tarjeta de Crédito":["Bancolombia","Davivienda","BBVA Colombia","Banco de Bogotá","Falabella"],"Crédito de Consumo":["Bancolombia","Davivienda","BBVA Colombia","Banco de Bogotá","Fincomercio"],"Crédito Hipotecario":["Bancolombia","Davivienda","BBVA Colombia","Banco de Bogotá","AV Villas"],"Comisión Transferencia":["Bancolombia","Davivienda","BBVA Colombia","Nequi","Daviplata"],"CDT / Depósito a Plazo":["Bancolombia","Davivienda","BBVA Colombia","Banco de Bogotá","Coltefinanciera"],"Seguro de Depósitos":["Bancolombia","Davivienda","BBVA Colombia","Banco Popular"],"Nómina Empresarial":["Bancolombia","Davivienda","BBVA Colombia","Banco de Bogotá"]},
-      "Estados Unidos":{"Cuenta de Ahorros":["JPMorgan Chase","Bank of America","Wells Fargo","Citibank","Capital One"],"Tarjeta de Crédito":["Chase","American Express","Bank of America","Citi","Capital One"],"Crédito de Consumo":["JPMorgan Chase","Bank of America","Wells Fargo","SoFi","Marcus"],"Crédito Hipotecario":["Wells Fargo","JPMorgan Chase","Bank of America","Rocket Mortgage","United Wholesale"],"Comisión Transferencia":["JPMorgan Chase","Bank of America","Wells Fargo","Zelle","PayPal"],"CDT / Depósito a Plazo":["JPMorgan Chase","Bank of America","Wells Fargo","Ally Bank","Marcus"],"Seguro de Depósitos":["JPMorgan Chase","Bank of America","Wells Fargo","FDIC insured"],"Nómina Empresarial":["ADP","Paychex","Gusto","JPMorgan Chase","Bank of America"]},
-      "default":{"Cuenta de Ahorros":["Bank A","Bank B","Bank C","Bank D"],"Tarjeta de Crédito":["Bank A","Bank B","Bank C"],"Crédito de Consumo":["Bank A","Bank B","Bank C"],"Crédito Hipotecario":["Bank A","Bank B","Bank C"],"Comisión Transferencia":["Bank A","Bank B","Bank C"],"CDT / Depósito a Plazo":["Bank A","Bank B","Bank C"],"Seguro de Depósitos":["Bank A","Bank B","Bank C"],"Nómina Empresarial":["Bank A","Bank B","Bank C"]},
+      "Colombia":{"Cuenta de Ahorros":["Bancolombia","Davivienda","BBVA Colombia","Banco de Bogotá","Nu"],"Tarjeta de Crédito":["Bancolombia","Davivienda","BBVA Colombia","Banco de Bogotá","Falabella"],"Crédito de Consumo":["Bancolombia","Davivienda","BBVA Colombia","Banco de Bogotá","Fincomercio"],"Crédito Hipotecario":["Bancolombia","Davivienda","BBVA Colombia","Banco de Bogotá","AV Villas"],"Comisión Transferencia":["Bancolombia","Davivienda","BBVA Colombia","Nequi","Daviplata"],"CDT / Depósito a Plazo":["Bancolombia","Davivienda","BBVA Colombia","Banco de Bogotá","Coltefinanciera"],"Nómina Empresarial":["Bancolombia","Davivienda","BBVA Colombia","Banco de Bogotá"],"Billetera Digital":["Nequi","Daviplata","Movii","Rappipay"]},
+      "China":{"Cuenta de Ahorros":["ICBC","China Construction Bank","Bank of China","Agricultural Bank"],"Tarjeta de Crédito":["ICBC","China Construction Bank","Bank of China","China Merchants Bank"],"Crédito de Consumo":["ICBC","Ant Financial","WeBank","JD Finance"],"Crédito Hipotecario":["ICBC","China Construction Bank","Bank of China","Agricultural Bank"],"Comisión Transferencia":["Alipay","WeChat Pay","UnionPay","ICBC"],"CDT / Depósito a Plazo":["ICBC","China Construction Bank","Bank of China","Agricultural Bank"],"Nómina Empresarial":["ICBC","China Construction Bank","Bank of China","China Merchants Bank"],"Billetera Digital":["Alipay","WeChat Pay","UnionPay","JD Pay"]},
+      "default":{"Cuenta de Ahorros":["Bank A","Bank B","Bank C","Bank D"],"Tarjeta de Crédito":["Bank A","Bank B","Bank C"],"Crédito de Consumo":["Bank A","Bank B","Bank C"],"Crédito Hipotecario":["Bank A","Bank B","Bank C"],"Comisión Transferencia":["Bank A","Bank B","Bank C"],"CDT / Depósito a Plazo":["Bank A","Bank B","Bank C"],"Nómina Empresarial":["Bank A","Bank B","Bank C"],"Billetera Digital":["Wallet A","Wallet B","Wallet C"]},
+    }
+  },
+  "Tecnología":{ products:["Smartphone Gama Media","Smartphone Gama Alta","Laptop 14 pulgadas","Tablet 10 pulgadas","Smart TV 55 pulgadas","Auriculares Bluetooth","Licencia Software Ofimática","Servicio Cloud Básico"],
+    companiesByCountry:{
+      "Colombia":{"Smartphone Gama Media":["Éxito","Falabella","Alkosto","Ktronix"],"Smartphone Gama Alta":["iShop","Samsung Store","Falabella","Éxito"],"Laptop 14 pulgadas":["Ktronix","Alkosto","Falabella","Éxito"],"Tablet 10 pulgadas":["Ktronix","Alkosto","Falabella","Éxito"],"Smart TV 55 pulgadas":["Ktronix","Alkosto","Falabella","Samsung Store"],"Auriculares Bluetooth":["Ktronix","Alkosto","Falabella","Éxito"],"Licencia Software Ofimática":["Microsoft Colombia","Google Colombia","Apple Colombia","Oficina Softnet"],"Servicio Cloud Básico":["AWS Colombia","Google Cloud Colombia","Microsoft Azure","Claro Cloud"]},
+      "China":{"Smartphone Gama Media":["JD.com","Tmall","Suning","Xiaomi Store"],"Smartphone Gama Alta":["Apple China","Samsung China","Huawei Store","JD.com"],"Laptop 14 pulgadas":["JD.com","Tmall","Lenovo Store","Dell China"],"Tablet 10 pulgadas":["JD.com","Tmall","Huawei Store","Xiaomi Store"],"Smart TV 55 pulgadas":["JD.com","Tmall","TCL Store","Xiaomi Store"],"Auriculares Bluetooth":["JD.com","Tmall","Xiaomi Store","Huawei Store"],"Licencia Software Ofimática":["Microsoft China","WPS Office","DingTalk","Feishu"],"Servicio Cloud Básico":["Alibaba Cloud","Tencent Cloud","Huawei Cloud","Baidu Cloud"]},
+      "default":{"Smartphone Gama Media":["Retailer A","Retailer B","Retailer C"],"Smartphone Gama Alta":["Retailer A","Retailer B","Retailer C"],"Laptop 14 pulgadas":["Retailer A","Retailer B","Retailer C"],"Tablet 10 pulgadas":["Retailer A","Retailer B","Retailer C"],"Smart TV 55 pulgadas":["Retailer A","Retailer B","Retailer C"],"Auriculares Bluetooth":["Retailer A","Retailer B","Retailer C"],"Licencia Software Ofimática":["Software A","Software B","Software C"],"Servicio Cloud Básico":["Cloud A","Cloud B","Cloud C"]},
+    }
+  },
+  "Salud":{ products:["Consulta Médica General","Consulta Médica Especialista","Examen de Laboratorio","Radiografía","Resonancia Magnética","Cirugía Ambulatoria","Fisioterapia Sesión","Plan de Salud Prepagada"],
+    companiesByCountry:{
+      "Colombia":{"Consulta Médica General":["Sura","Colsanitas","Coomeva","Compensar","Sanitas"],"Consulta Médica Especialista":["Sura","Colsanitas","Coomeva","Compensar","Sanitas"],"Examen de Laboratorio":["Clínica del Country","Fundación Santa Fe","Pablo Tobón Uribe","Clínica Medellín"],"Radiografía":["Clínica del Country","Fundación Santa Fe","Pablo Tobón Uribe","ImagCorp"],"Resonancia Magnética":["Clínica del Country","Fundación Santa Fe","Clínica Medellín","ImagCorp"],"Cirugía Ambulatoria":["Clínica del Country","Fundación Santa Fe","Pablo Tobón Uribe","Clínica Medellín"],"Fisioterapia Sesión":["Compensar","Colsubsidio","Colsanitas","IPS privadas"],"Plan de Salud Prepagada":["Sura","Colsanitas","Coomeva","Compensar","Sanitas"]},
+      "default":{"Consulta Médica General":["Clinic A","Clinic B","Clinic C"],"Consulta Médica Especialista":["Clinic A","Clinic B","Clinic C"],"Examen de Laboratorio":["Lab A","Lab B","Lab C"],"Radiografía":["Clinic A","Clinic B","Clinic C"],"Resonancia Magnética":["Clinic A","Clinic B","Clinic C"],"Cirugía Ambulatoria":["Hospital A","Hospital B","Hospital C"],"Fisioterapia Sesión":["Clinic A","Clinic B","Clinic C"],"Plan de Salud Prepagada":["Insurer A","Insurer B","Insurer C"]},
     }
   },
 };
 
 const BASE_PRICES = {
-  "Gasolina Regular":9600,"Gasolina Premium":11200,"ACPM / Diésel":9100,"Gas Natural":3200,
-  "Energía Eléctrica":450,"Carbón":85000,"Etanol":3100,"Gas Licuado (GLP)":2800,
-  "Internet Hogar 100Mbps":87000,"Internet Hogar 300Mbps":115000,"Internet Hogar 1Gbps":160000,
-  "Telefonía Móvil Postpago":65000,"Telefonía Móvil Prepago":25000,"TV por Suscripción":72000,
-  "Telefonía Fija":28000,"Roaming Internacional":45000,
-  "Pollo Entero":9200,"Carne de Res (kg)":28000,"Aceite Vegetal 1L":8900,"Leche 1L":3400,
-  "Arroz 1kg":4100,"Pan Tajado":5200,"Huevos (docena)":14500,"Azúcar 1kg":3800,
-  "Harina de Trigo 1kg":4200,"Café Molido 500g":18000,
-  "Seguro Auto Básico":1820000,"Seguro Auto Todo Riesgo":3400000,"Seguro de Vida":980000,
-  "SOAT / Seguro Obligatorio":580000,"Seguro de Hogar":720000,"Seguro de Salud":250000,
-  "Seguro Empresarial":2800000,"Seguro de Viaje":180000,
-  "Acetaminofén 500mg":8500,"Ibuprofeno 400mg":12000,"Amoxicilina 500mg":32000,
-  "Omeprazol 20mg":18000,"Metformina 850mg":22000,"Atorvastatina 20mg":45000,
-  "Losartán 50mg":38000,"Vitamina C 1000mg":25000,
-  "Taxi / Cabify km":2800,"Servicio de Bus":2950,"Vuelo Doméstico":280000,
-  "Vuelo Internacional":1800000,"Peaje Autopista":12500,"Servicio de Metro":2950,
-  "Transporte de Carga":180000,"Mensajería Express":8500,
-  "Cuenta de Ahorros":0,"Tarjeta de Crédito":38000,"Crédito de Consumo":1800000,
-  "Crédito Hipotecario":180000000,"Comisión Transferencia":8500,"CDT / Depósito a Plazo":5000000,
-  "Seguro de Depósitos":12000,"Nómina Empresarial":85000,
+  "Gasolina Regular":9600,"Gasolina Premium":11200,"ACPM / Diésel":9100,"Gas Natural":3200,"Energía Eléctrica":450,"Gas Licuado (GLP)":2800,"Carbón":85000,"Energía Solar":3500,
+  "Internet Hogar 100Mbps":87000,"Internet Hogar 300Mbps":115000,"Internet Hogar 1Gbps":160000,"Telefonía Móvil Postpago":65000,"Telefonía Móvil Prepago":25000,"TV por Suscripción":72000,"Telefonía Fija":28000,"Roaming Internacional":45000,"Streaming Música":18000,"Streaming Video":32000,
+  "Pollo Entero":9200,"Carne de Res (kg)":28000,"Aceite Vegetal 1L":8900,"Leche 1L":3400,"Arroz 1kg":4100,"Pan Tajado":5200,"Huevos (docena)":14500,"Azúcar 1kg":3800,"Harina de Trigo 1kg":4200,"Café Molido 500g":18000,"Agua Embotellada 1.5L":2800,"Atún en lata":8500,
+  "Seguro Auto Básico":1820000,"Seguro Auto Todo Riesgo":3400000,"Seguro de Vida":980000,"SOAT / Seguro Obligatorio":580000,"Seguro de Hogar":720000,"Seguro de Salud":250000,"Seguro Empresarial":2800000,"Seguro de Viaje":180000,
+  "Acetaminofén 500mg":8500,"Ibuprofeno 400mg":12000,"Amoxicilina 500mg":32000,"Omeprazol 20mg":18000,"Metformina 850mg":22000,"Atorvastatina 20mg":45000,"Losartán 50mg":38000,"Vitamina C 1000mg":25000,"Vitamina D 1000UI":28000,"Anticonceptivos orales":35000,
+  "Taxi / Rideshare km":2800,"Servicio de Bus":2950,"Vuelo Doméstico":280000,"Vuelo Internacional":1800000,"Peaje Autopista":12500,"Servicio de Metro":2950,"Transporte de Carga":180000,"Mensajería Express":8500,"Bicicletas Compartidas":2500,"Patinetas Eléctricas":3200,
+  "Cuenta de Ahorros":0,"Tarjeta de Crédito":38000,"Crédito de Consumo":1800000,"Crédito Hipotecario":180000000,"Comisión Transferencia":8500,"CDT / Depósito a Plazo":5000000,"Nómina Empresarial":85000,"Billetera Digital":0,
+  "Smartphone Gama Media":850000,"Smartphone Gama Alta":3200000,"Laptop 14 pulgadas":2800000,"Tablet 10 pulgadas":1200000,"Smart TV 55 pulgadas":1800000,"Auriculares Bluetooth":280000,"Licencia Software Ofimática":180000,"Servicio Cloud Básico":85000,
+  "Consulta Médica General":85000,"Consulta Médica Especialista":180000,"Examen de Laboratorio":45000,"Radiografía":85000,"Resonancia Magnética":580000,"Cirugía Ambulatoria":2800000,"Fisioterapia Sesión":65000,"Plan de Salud Prepagada":320000,
 };
 
 const UNITS = {
-  "Gasolina Regular":"litro","Gasolina Premium":"litro","ACPM / Diésel":"litro","Gas Natural":"m³",
-  "Energía Eléctrica":"kWh","Carbón":"tonelada","Etanol":"litro","Gas Licuado (GLP)":"kg",
-  "Internet Hogar 100Mbps":"mes","Internet Hogar 300Mbps":"mes","Internet Hogar 1Gbps":"mes",
-  "Telefonía Móvil Postpago":"mes","Telefonía Móvil Prepago":"plan","TV por Suscripción":"mes",
-  "Telefonía Fija":"mes","Roaming Internacional":"plan",
-  "Pollo Entero":"kg","Carne de Res (kg)":"kg","Aceite Vegetal 1L":"und","Leche 1L":"und",
-  "Arroz 1kg":"kg","Pan Tajado":"und","Huevos (docena)":"docena","Azúcar 1kg":"kg",
-  "Harina de Trigo 1kg":"kg","Café Molido 500g":"und",
-  "Seguro Auto Básico":"año","Seguro Auto Todo Riesgo":"año","Seguro de Vida":"año",
-  "SOAT / Seguro Obligatorio":"año","Seguro de Hogar":"año","Seguro de Salud":"mes",
-  "Seguro Empresarial":"año","Seguro de Viaje":"viaje",
-  "Acetaminofén 500mg":"caja","Ibuprofeno 400mg":"caja","Amoxicilina 500mg":"caja",
-  "Omeprazol 20mg":"caja","Metformina 850mg":"caja","Atorvastatina 20mg":"caja",
-  "Losartán 50mg":"caja","Vitamina C 1000mg":"caja",
-  "Taxi / Cabify km":"km","Servicio de Bus":"pasaje","Vuelo Doméstico":"tiquete",
-  "Vuelo Internacional":"tiquete","Peaje Autopista":"paso","Servicio de Metro":"pasaje",
-  "Transporte de Carga":"envío","Mensajería Express":"envío",
-  "Cuenta de Ahorros":"cuota/mes","Tarjeta de Crédito":"cuota anual","Crédito de Consumo":"crédito",
-  "Crédito Hipotecario":"crédito","Comisión Transferencia":"transacción","CDT / Depósito a Plazo":"inversión",
-  "Seguro de Depósitos":"mes","Nómina Empresarial":"mes",
+  "Gasolina Regular":"litro","Gasolina Premium":"litro","ACPM / Diésel":"litro","Gas Natural":"m³","Energía Eléctrica":"kWh","Gas Licuado (GLP)":"kg","Carbón":"tonelada","Energía Solar":"kWp",
+  "Internet Hogar 100Mbps":"mes","Internet Hogar 300Mbps":"mes","Internet Hogar 1Gbps":"mes","Telefonía Móvil Postpago":"mes","Telefonía Móvil Prepago":"plan","TV por Suscripción":"mes","Telefonía Fija":"mes","Roaming Internacional":"plan","Streaming Música":"mes","Streaming Video":"mes",
+  "Pollo Entero":"kg","Carne de Res (kg)":"kg","Aceite Vegetal 1L":"und","Leche 1L":"und","Arroz 1kg":"kg","Pan Tajado":"und","Huevos (docena)":"docena","Azúcar 1kg":"kg","Harina de Trigo 1kg":"kg","Café Molido 500g":"und","Agua Embotellada 1.5L":"und","Atún en lata":"und",
+  "Seguro Auto Básico":"año","Seguro Auto Todo Riesgo":"año","Seguro de Vida":"año","SOAT / Seguro Obligatorio":"año","Seguro de Hogar":"año","Seguro de Salud":"mes","Seguro Empresarial":"año","Seguro de Viaje":"viaje",
+  "Acetaminofén 500mg":"caja","Ibuprofeno 400mg":"caja","Amoxicilina 500mg":"caja","Omeprazol 20mg":"caja","Metformina 850mg":"caja","Atorvastatina 20mg":"caja","Losartán 50mg":"caja","Vitamina C 1000mg":"caja","Vitamina D 1000UI":"caja","Anticonceptivos orales":"caja",
+  "Taxi / Rideshare km":"km","Servicio de Bus":"pasaje","Vuelo Doméstico":"tiquete","Vuelo Internacional":"tiquete","Peaje Autopista":"paso","Servicio de Metro":"pasaje","Transporte de Carga":"envío","Mensajería Express":"envío","Bicicletas Compartidas":"viaje","Patinetas Eléctricas":"viaje",
+  "Cuenta de Ahorros":"mes","Tarjeta de Crédito":"año","Crédito de Consumo":"crédito","Crédito Hipotecario":"crédito","Comisión Transferencia":"transacción","CDT / Depósito a Plazo":"inversión","Nómina Empresarial":"mes","Billetera Digital":"mes",
+  "Smartphone Gama Media":"und","Smartphone Gama Alta":"und","Laptop 14 pulgadas":"und","Tablet 10 pulgadas":"und","Smart TV 55 pulgadas":"und","Auriculares Bluetooth":"und","Licencia Software Ofimática":"año","Servicio Cloud Básico":"mes",
+  "Consulta Médica General":"consulta","Consulta Médica Especialista":"consulta","Examen de Laboratorio":"examen","Radiografía":"und","Resonancia Magnética":"und","Cirugía Ambulatoria":"procedimiento","Fisioterapia Sesión":"sesión","Plan de Salud Prepagada":"mes",
 };
-const PRICE_MULT = {"Colombia":1,"México":1.2,"Brasil":1.3,"Argentina":0.9,"Chile":1.1,"Perú":0.85,"España":1.8,"Francia":1.9,"Alemania":1.85,"Italia":1.75,"Reino Unido":2.1,"Estados Unidos":2.2,"Canadá":2.0,"Japón":2.5,"Corea del Sur":1.7,"India":0.4};
 
+const PRICE_MULT = {"Colombia":1,"México":1.2,"Brasil":1.3,"Argentina":0.9,"Chile":1.1,"Perú":0.85,"Ecuador":0.95,"Bolivia":0.7,"Paraguay":0.65,"Uruguay":1.15,"España":1.8,"Francia":1.9,"Alemania":1.85,"Italia":1.75,"Reino Unido":2.1,"Portugal":1.6,"Países Bajos":1.95,"Suecia":2.0,"Polonia":1.3,"Estados Unidos":2.2,"Canadá":2.0,"China":0.8,"Japón":2.5,"Corea del Sur":1.7,"India":0.4};
+
+// ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
+const T = {
+  es:{
+    appSubtitle:"MONITOR ANTIMONOPOLIO",live:"EN VIVO",alerts:"ALERTA",alertsPlural:"ALERTAS",
+    tabs:["📊 Dashboard","📉 Comparativa","🔔 Alertas","⚖️ Dictamen IA"],
+    filterTitle:"Filtros de Consulta",worldRegion:"Región del mundo",country:"País",
+    territory:"Territorio / Ciudad",market:"Mercado",product:"Producto / Servicio",
+    company:"Empresa",dateFrom:"Fecha desde",dateTo:"Fecha hasta",
+    hourFrom:"Hora desde",hourTo:"Hora hasta",authority:"AUTORIDAD COMPETENTE",
+    legalFrame:"MARCO LEGAL",allCompanies:"Todas",allCompaniesLabel:"Todas las empresas",
+    riskLevel:"Nivel de riesgo",marketDispersion:"Dispersión mercado",
+    avgVariation:"Variación media",maxPrice:"Precio máximo",minPrice:"Precio mínimo",
+    avgPrice:"Precio promedio",betweenCompetitors:"entre competidores",
+    vsPrevPeriod:"vs período anterior",mostExpensive:"más caro del mercado",
+    cheapest:"más barato del mercado",marketAvg:"media del mercado",score:"Score",
+    activeAlerts:"Alertas Activas",detection:"detección",detections:"detecciones",
+    critical:"CRÍTICAS",high:"ALTAS",medium:"MEDIAS",jurisdiction:"JURISDICCIÓN",
+    noAlerts:"No se detectaron prácticas restrictivas en el mercado seleccionado.",
+    notifChannels:"Canales de Notificación",emailAlerts:"Correo electrónico",
+    active:"Activo",alwaysActive:"Siempre activo",inAppNotif:"Notificación en app",
+    inAppDesc:"Las alertas se actualizan automáticamente al cambiar los filtros.",
+    noConfigRequired:"Sin configuración requerida",comingSoon:"Próximamente",
+    inDevelopment:"En desarrollo",detectionThresholds:"Umbrales de Detección",
+    activateEmail:"Activar alertas por email",configured:"✓ Configurado",
+    comparison:"Comparativa entre Competidores",
+    rankingTitle:"RANKING DE PRECIOS — menor a mayor",average:"Promedio",
+    currentVsPrev:"PRECIO ACTUAL vs ANTERIOR",
+    deviationVsAvg:"DESVIACIÓN VS PROMEDIO DE MERCADO",
+    historicalEvolution:"EVOLUCIÓN HISTÓRICA COMPARADA (7 MESES)",
+    riskStats:"Estadísticas de Riesgo Anticompetitivo",seeDetail:"Ver detalle →",
+    aiAnalysis:"Dictamen Jurídico con IA",
+    aiDesc:"La IA genera un dictamen técnico-jurídico con base legal exacta, probabilidad de infracción y recomendaciones de investigación.",
+    generateDictum:"⚖️ Generar Dictamen Legal",analyzing:"Analizando",dictum:"DICTAMEN",
+    legalBase:"BASE LEGAL",recommendedAction:"ACCIÓN RECOMENDADA",
+    applicableSanctions:"SANCIONES APLICABLES",severity:"SEVERIDAD",probability:"PROBABILIDAD",
+    period:"Período",schedule:"Horario",currentPrice:"Precio actual",
+    prevPrice:"Precio anterior",variation:"Variación",vsAverage:"vs Promedio",
+    marketShare:"Cuota mercado",changes30:"Cambios 30 días",priceAdjustments:"ajustes de precio",
+    individualProfile:"Perfil Individual",historicalPrice:"EVOLUCIÓN HISTÓRICA DE PRECIO",
+    competitiveScore:"SCORECARD COMPETITIVO",higherBetter:"Mayor valor = mejor desempeño relativo",
+    per:"por",prevPeriod:"período anterior",marketDeviation:"desviación del mercado",estimated:"estimado",
+    prev:"Anterior",current:"Actual",devFromAvg:"Desv. del promedio",complaints:"Quejas",selected:"seleccionada",
+    sevLabels:{"CRÍTICA":"CRÍTICA","ALTA":"ALTA","MEDIA":"MEDIA"},
+    riskLabels:{critical:"CRÍTICO",high:"ALTO",medium:"MEDIO",low:"BAJO"},
+    regions:{"América Latina":"América Latina","Europa":"Europa","América del Norte":"América del Norte","Asia":"Asia"},
+    markets:{"Energía":"Energía","Telecomunicaciones":"Telecomunicaciones","Alimentos":"Alimentos","Seguros":"Seguros","Farmacéutico":"Farmacéutico","Transporte":"Transporte","Banca y Finanzas":"Banca y Finanzas","Tecnología":"Tecnología","Salud":"Salud"},
+    patternTypes:{"FIJACIÓN DE PRECIOS":"FIJACIÓN DE PRECIOS","ALZA SIMULTÁNEA":"ALZA SIMULTÁNEA","PARALELISMO DE PRECIOS":"PARALELISMO DE PRECIOS","POSICIÓN DOMINANTE":"POSICIÓN DOMINANTE","PRECIOS PREDATORIOS":"PRECIOS PREDATORIOS","CONCENTRACIÓN":"CONCENTRACIÓN"},
+    patternDescs:{"FIJACIÓN DE PRECIOS":(v,n)=>`Dispersión de solo ${v}% entre ${n} competidores. Coordinación horizontal altamente probable.`,"ALZA SIMULTÁNEA":(v)=>`Todos los actores incrementaron precios ${v}% simultáneamente.`,"PARALELISMO DE PRECIOS":(v)=>`Diferencia máxima entre actores: ${v}%. Comportamiento paralelo sospechoso.`,"POSICIÓN DOMINANTE":(c,v)=>`${c} concentra el ${v}% del mercado.`,"PRECIOS PREDATORIOS":(c,v)=>`${c} vende ${v}% por debajo del promedio.`,"CONCENTRACIÓN":(v)=>`Top 2 empresas concentran el ${v}% del mercado.`},
+    patternActions:{"FIJACIÓN DE PRECIOS":"Iniciar investigación formal. Solicitar información sobre comunicaciones entre empresas.","ALZA SIMULTÁNEA":"Verificar si existieron comunicados o reuniones previas al alza.","PARALELISMO DE PRECIOS":"Analizar si la uniformidad obedece a factores estructurales legítimos.","POSICIÓN DOMINANTE":"Investigar si impone precios excesivos o condiciona ventas.","PRECIOS PREDATORIOS":"Solicitar estructura de costos. Verificar costo variable medio.","CONCENTRACIÓN":"Revisar historia de adquisiciones. Evaluar barreras de entrada."},
+    probLabels:{high80:"Muy Alta (>80%)",high60:"Alta (60-80%)",med40:"Media (40-60%)",med30:"Media-Alta (50-70%)",med35:"Media (35-55%)",med30b:"Media (30-50%)",med30c:"Media (30-45%)"},
+    thresholds:["🔴 Fijación de precios — dispersión menor al 0.5%","🟠 Alza simultánea — todos suben más del 10%","🟡 Paralelismo — dispersión entre 0.5% y 2%","🔵 Posición dominante — cuota superior al 60%","⚡ Precios predatorios — precio menor al 75% del promedio","🔶 Alta concentración — top 2 empresas superan el 80%"],
+    tableHeaders:["#","EMPRESA","PRECIO","ANTERIOR","VARIACIÓN","vs PROMEDIO","CUOTA","QUEJAS"],
+    searchBtn:"🔍 Consultar",freeSearches:"Consultas gratuitas restantes",
+    loginTitle:"Inicia sesión para continuar",loginDesc:"Has usado tus 2 consultas gratuitas. Inicia sesión para continuar usando Fair Compes.",
+    emailPlaceholder:"tu@correo.com",loginBtn:"Continuar con correo",
+    paywallTitle:"Suscríbete para acceso ilimitado",
+    paywallDesc:"Accede a todos los mercados, países y dictámenes jurídicos sin límite.",
+    paywallFeatures:["✅ Acceso ilimitado a 23 países","✅ 9 mercados y +80 productos","✅ Alertas antimonopolio automáticas","✅ Dictamen jurídico ilimitado","✅ Español e inglés"],
+    paywallPrice:"$49 USD / mes",boldBtn:"💳 Pagar con Bold",paypalBtn:"🅿️ Pagar con PayPal",gumroadBtn:"🛒 Pagar con Gumroad",
+    backBtn:"Volver a la app",alreadyHave:"¿Ya tienes acceso? Escríbenos a",
+    tutorialTitle:"¡Bienvenido a Fair Compes!",tutorialSubtitle:"Tutorial rápido — 4 pasos",
+    tutorialSteps:[{icon:"🔍",title:"Selecciona filtros",desc:"Elige el país, mercado, producto y territorio que quieres analizar."},{icon:"📊",title:"Analiza el Dashboard",desc:"Ve el nivel de riesgo, dispersión de precios y alertas anticompetitivas detectadas automáticamente."},{icon:"🔔",title:"Revisa las Alertas",desc:"Cada alerta muestra la base legal exacta, la acción recomendada y las sanciones aplicables."},{icon:"⚖️",title:"Genera el Dictamen",desc:"Obtén un dictamen jurídico completo basado en los datos del mercado seleccionado."}],
+    tutorialBtn:"¡Empezar a usar Fair Compes!",
+    disclaimer:"⚠️ AVISO IMPORTANTE: El dictamen generado es una orientación preliminar de carácter informativo. Bajo ninguna circunstancia constituye asesoría jurídica formal ni genera efectos jurídicos en procesos administrativos, judiciales o de cualquier otra naturaleza en curso. Para efectos legales, consulte a un abogado especializado en derecho de la competencia.",
+    products:{"Gasolina Regular":"Gasolina Regular","Gasolina Premium":"Gasolina Premium","ACPM / Diésel":"ACPM / Diésel","Gas Natural":"Gas Natural","Energía Eléctrica":"Energía Eléctrica","Gas Licuado (GLP)":"Gas Licuado (GLP)","Carbón":"Carbón","Energía Solar":"Energía Solar","Internet Hogar 100Mbps":"Internet Hogar 100Mbps","Internet Hogar 300Mbps":"Internet Hogar 300Mbps","Internet Hogar 1Gbps":"Internet Hogar 1Gbps","Telefonía Móvil Postpago":"Telefonía Móvil Postpago","Telefonía Móvil Prepago":"Telefonía Móvil Prepago","TV por Suscripción":"TV por Suscripción","Telefonía Fija":"Telefonía Fija","Roaming Internacional":"Roaming Internacional","Streaming Música":"Streaming Música","Streaming Video":"Streaming Video","Pollo Entero":"Pollo Entero","Carne de Res (kg)":"Carne de Res (kg)","Aceite Vegetal 1L":"Aceite Vegetal 1L","Leche 1L":"Leche 1L","Arroz 1kg":"Arroz 1kg","Pan Tajado":"Pan Tajado","Huevos (docena)":"Huevos (docena)","Azúcar 1kg":"Azúcar 1kg","Harina de Trigo 1kg":"Harina de Trigo 1kg","Café Molido 500g":"Café Molido 500g","Agua Embotellada 1.5L":"Agua Embotellada 1.5L","Atún en lata":"Atún en lata","Seguro Auto Básico":"Seguro Auto Básico","Seguro Auto Todo Riesgo":"Seguro Auto Todo Riesgo","Seguro de Vida":"Seguro de Vida","SOAT / Seguro Obligatorio":"SOAT / Seguro Obligatorio","Seguro de Hogar":"Seguro de Hogar","Seguro de Salud":"Seguro de Salud","Seguro Empresarial":"Seguro Empresarial","Seguro de Viaje":"Seguro de Viaje","Acetaminofén 500mg":"Acetaminofén 500mg","Ibuprofeno 400mg":"Ibuprofeno 400mg","Amoxicilina 500mg":"Amoxicilina 500mg","Omeprazol 20mg":"Omeprazol 20mg","Metformina 850mg":"Metformina 850mg","Atorvastatina 20mg":"Atorvastatina 20mg","Losartán 50mg":"Losartán 50mg","Vitamina C 1000mg":"Vitamina C 1000mg","Vitamina D 1000UI":"Vitamina D 1000UI","Anticonceptivos orales":"Anticonceptivos orales","Taxi / Rideshare km":"Taxi / Rideshare km","Servicio de Bus":"Servicio de Bus","Vuelo Doméstico":"Vuelo Doméstico","Vuelo Internacional":"Vuelo Internacional","Peaje Autopista":"Peaje Autopista","Servicio de Metro":"Servicio de Metro","Transporte de Carga":"Transporte de Carga","Mensajería Express":"Mensajería Express","Bicicletas Compartidas":"Bicicletas Compartidas","Patinetas Eléctricas":"Patinetas Eléctricas","Cuenta de Ahorros":"Cuenta de Ahorros","Tarjeta de Crédito":"Tarjeta de Crédito","Crédito de Consumo":"Crédito de Consumo","Crédito Hipotecario":"Crédito Hipotecario","Comisión Transferencia":"Comisión Transferencia","CDT / Depósito a Plazo":"CDT / Depósito a Plazo","Nómina Empresarial":"Nómina Empresarial","Billetera Digital":"Billetera Digital","Smartphone Gama Media":"Smartphone Gama Media","Smartphone Gama Alta":"Smartphone Gama Alta","Laptop 14 pulgadas":"Laptop 14 pulgadas","Tablet 10 pulgadas":"Tablet 10 pulgadas","Smart TV 55 pulgadas":"Smart TV 55 pulgadas","Auriculares Bluetooth":"Auriculares Bluetooth","Licencia Software Ofimática":"Licencia Software Ofimática","Servicio Cloud Básico":"Servicio Cloud Básico","Consulta Médica General":"Consulta Médica General","Consulta Médica Especialista":"Consulta Médica Especialista","Examen de Laboratorio":"Examen de Laboratorio","Radiografía":"Radiografía","Resonancia Magnética":"Resonancia Magnética","Cirugía Ambulatoria":"Cirugía Ambulatoria","Fisioterapia Sesión":"Fisioterapia Sesión","Plan de Salud Prepagada":"Plan de Salud Prepagada"},
+  },
+  en:{
+    appSubtitle:"ANTITRUST MONITOR",live:"LIVE",alerts:"ALERT",alertsPlural:"ALERTS",
+    tabs:["📊 Dashboard","📉 Comparison","🔔 Alerts","⚖️ AI Legal Opinion"],
+    filterTitle:"Query Filters",worldRegion:"World Region",country:"Country",
+    territory:"Territory / City",market:"Market",product:"Product / Service",
+    company:"Company",dateFrom:"Date from",dateTo:"Date to",
+    hourFrom:"Hour from",hourTo:"Hour to",authority:"COMPETENT AUTHORITY",
+    legalFrame:"LEGAL FRAMEWORK",allCompanies:"All",allCompaniesLabel:"All companies",
+    riskLevel:"Risk level",marketDispersion:"Market dispersion",
+    avgVariation:"Average variation",maxPrice:"Maximum price",minPrice:"Minimum price",
+    avgPrice:"Average price",betweenCompetitors:"between competitors",
+    vsPrevPeriod:"vs previous period",mostExpensive:"most expensive in market",
+    cheapest:"cheapest in market",marketAvg:"market average",score:"Score",
+    activeAlerts:"Active Alerts",detection:"detection",detections:"detections",
+    critical:"CRITICAL",high:"HIGH",medium:"MEDIUM",jurisdiction:"JURISDICTION",
+    noAlerts:"No restrictive practices detected in the selected market.",
+    notifChannels:"Notification Channels",emailAlerts:"Email",
+    active:"Active",alwaysActive:"Always active",inAppNotif:"In-app notification",
+    inAppDesc:"Alerts update automatically when filters change.",
+    noConfigRequired:"No configuration required",comingSoon:"Coming soon",
+    inDevelopment:"In development",detectionThresholds:"Detection Thresholds",
+    activateEmail:"Activate email alerts",configured:"✓ Configured",
+    comparison:"Competitor Comparison",
+    rankingTitle:"PRICE RANKING — lowest to highest",average:"Average",
+    currentVsPrev:"CURRENT vs PREVIOUS PRICE",
+    deviationVsAvg:"DEVIATION VS MARKET AVERAGE",
+    historicalEvolution:"HISTORICAL COMPARISON (7 MONTHS)",
+    riskStats:"Antitrust Risk Statistics",seeDetail:"See detail →",
+    aiAnalysis:"AI Legal Opinion",
+    aiDesc:"The AI generates a technical-legal opinion with exact legal basis, probability of infringement and investigation recommendations.",
+    generateDictum:"⚖️ Generate Legal Opinion",analyzing:"Analyzing",dictum:"LEGAL OPINION",
+    legalBase:"LEGAL BASIS",recommendedAction:"RECOMMENDED ACTION",
+    applicableSanctions:"APPLICABLE SANCTIONS",severity:"SEVERITY",probability:"PROBABILITY",
+    period:"Period",schedule:"Schedule",currentPrice:"Current price",
+    prevPrice:"Previous price",variation:"Variation",vsAverage:"vs Average",
+    marketShare:"Market share",changes30:"Changes 30 days",priceAdjustments:"price adjustments",
+    individualProfile:"Individual Profile",historicalPrice:"HISTORICAL PRICE EVOLUTION",
+    competitiveScore:"COMPETITIVE SCORECARD",higherBetter:"Higher value = better relative performance",
+    per:"per",prevPeriod:"previous period",marketDeviation:"market deviation",estimated:"estimated",
+    prev:"Previous",current:"Current",devFromAvg:"Dev. from avg",complaints:"Complaints",selected:"selected",
+    sevLabels:{"CRÍTICA":"CRITICAL","ALTA":"HIGH","MEDIA":"MEDIUM"},
+    riskLabels:{critical:"CRITICAL",high:"HIGH",medium:"MEDIUM",low:"LOW"},
+    regions:{"América Latina":"Latin America","Europa":"Europe","América del Norte":"North America","Asia":"Asia"},
+    markets:{"Energía":"Energy","Telecomunicaciones":"Telecommunications","Alimentos":"Food","Seguros":"Insurance","Farmacéutico":"Pharmaceutical","Transporte":"Transport","Banca y Finanzas":"Banking & Finance","Tecnología":"Technology","Salud":"Healthcare"},
+    patternTypes:{"FIJACIÓN DE PRECIOS":"PRICE FIXING","ALZA SIMULTÁNEA":"SIMULTANEOUS PRICE HIKE","PARALELISMO DE PRECIOS":"PRICE PARALLELISM","POSICIÓN DOMINANTE":"DOMINANT POSITION","PRECIOS PREDATORIOS":"PREDATORY PRICING","CONCENTRACIÓN":"MARKET CONCENTRATION"},
+    patternDescs:{"FIJACIÓN DE PRECIOS":(v,n)=>`Dispersion of only ${v}% among ${n} competitors. Horizontal coordination highly probable.`,"ALZA SIMULTÁNEA":(v)=>`All actors increased prices ${v}% simultaneously.`,"PARALELISMO DE PRECIOS":(v)=>`Maximum difference between actors: ${v}%. Suspicious parallel behavior.`,"POSICIÓN DOMINANTE":(c,v)=>`${c} holds ${v}% of the market.`,"PRECIOS PREDATORIOS":(c,v)=>`${c} sells ${v}% below average.`,"CONCENTRACIÓN":(v)=>`Top 2 companies hold ${v}% of the market.`},
+    patternActions:{"FIJACIÓN DE PRECIOS":"Initiate formal investigation. Request information on communications between companies.","ALZA SIMULTÁNEA":"Check if there were press releases or meetings prior to the price increase.","PARALELISMO DE PRECIOS":"Analyze whether uniformity stems from legitimate structural factors.","POSICIÓN DOMINANTE":"Investigate whether the company imposes excessive prices or conditions sales.","PRECIOS PREDATORIOS":"Request cost structure. Verify average variable cost.","CONCENTRACIÓN":"Review acquisition history. Assess entry barriers."},
+    probLabels:{high80:"Very High (>80%)",high60:"High (60-80%)",med40:"Medium (40-60%)",med30:"Medium-High (50-70%)",med35:"Medium (35-55%)",med30b:"Medium (30-50%)",med30c:"Medium (30-45%)"},
+    thresholds:["🔴 Price fixing — dispersion below 0.5%","🟠 Simultaneous hike — all actors raise over 10%","🟡 Parallelism — dispersion between 0.5% and 2%","🔵 Dominant position — market share above 60%","⚡ Predatory pricing — price below 75% of average","🔶 High concentration — top 2 companies exceed 80%"],
+    tableHeaders:["#","COMPANY","PRICE","PREVIOUS","VARIATION","vs AVERAGE","SHARE","COMPLAINTS"],
+    searchBtn:"🔍 Search",freeSearches:"Free searches remaining",
+    loginTitle:"Sign in to continue",loginDesc:"You've used your 2 free searches. Sign in to continue using Fair Compes.",
+    emailPlaceholder:"your@email.com",loginBtn:"Continue with email",
+    paywallTitle:"Subscribe for unlimited access",
+    paywallDesc:"Access all markets, countries and legal opinions without limits.",
+    paywallFeatures:["✅ Unlimited access to 23 countries","✅ 9 markets and +80 products","✅ Automatic antitrust alerts","✅ Unlimited legal opinions","✅ Spanish and English"],
+    paywallPrice:"$49 USD / month",boldBtn:"💳 Pay with Bold",paypalBtn:"🅿️ Pay with PayPal",gumroadBtn:"🛒 Pay with Gumroad",
+    backBtn:"Back to app",alreadyHave:"Already have access? Email us at",
+    tutorialTitle:"Welcome to Fair Compes!",tutorialSubtitle:"Quick tutorial — 4 steps",
+    tutorialSteps:[{icon:"🔍",title:"Select filters",desc:"Choose the country, market, product and territory you want to analyze."},{icon:"📊",title:"Analyze the Dashboard",desc:"See the risk level, price dispersion and automatically detected antitrust alerts."},{icon:"🔔",title:"Review Alerts",desc:"Each alert shows the exact legal basis, recommended action and applicable sanctions."},{icon:"⚖️",title:"Generate Legal Opinion",desc:"Get a complete legal opinion based on the selected market data."}],
+    tutorialBtn:"Start using Fair Compes!",
+    disclaimer:"⚠️ IMPORTANT NOTICE: The generated opinion is a preliminary informational guidance only. Under no circumstances does it constitute formal legal advice or produce legal effects in any ongoing administrative, judicial or other proceedings. For legal purposes, consult a lawyer specialized in competition law.",
+    products:{"Gasolina Regular":"Regular Gasoline","Gasolina Premium":"Premium Gasoline","ACPM / Diésel":"Diesel Fuel","Gas Natural":"Natural Gas","Energía Eléctrica":"Electric Power","Gas Licuado (GLP)":"LPG Gas","Carbón":"Coal","Energía Solar":"Solar Energy","Internet Hogar 100Mbps":"Home Internet 100Mbps","Internet Hogar 300Mbps":"Home Internet 300Mbps","Internet Hogar 1Gbps":"Home Internet 1Gbps","Telefonía Móvil Postpago":"Postpaid Mobile","Telefonía Móvil Prepago":"Prepaid Mobile","TV por Suscripción":"Subscription TV","Telefonía Fija":"Landline Phone","Roaming Internacional":"International Roaming","Streaming Música":"Music Streaming","Streaming Video":"Video Streaming","Pollo Entero":"Whole Chicken","Carne de Res (kg)":"Beef (kg)","Aceite Vegetal 1L":"Vegetable Oil 1L","Leche 1L":"Milk 1L","Arroz 1kg":"Rice 1kg","Pan Tajado":"Sliced Bread","Huevos (docena)":"Eggs (dozen)","Azúcar 1kg":"Sugar 1kg","Harina de Trigo 1kg":"Wheat Flour 1kg","Café Molido 500g":"Ground Coffee 500g","Agua Embotellada 1.5L":"Bottled Water 1.5L","Atún en lata":"Canned Tuna","Seguro Auto Básico":"Basic Auto Insurance","Seguro Auto Todo Riesgo":"Full Coverage Insurance","Seguro de Vida":"Life Insurance","SOAT / Seguro Obligatorio":"Mandatory Insurance","Seguro de Hogar":"Home Insurance","Seguro de Salud":"Health Insurance","Seguro Empresarial":"Business Insurance","Seguro de Viaje":"Travel Insurance","Acetaminofén 500mg":"Acetaminophen 500mg","Ibuprofeno 400mg":"Ibuprofen 400mg","Amoxicilina 500mg":"Amoxicillin 500mg","Omeprazol 20mg":"Omeprazole 20mg","Metformina 850mg":"Metformin 850mg","Atorvastatina 20mg":"Atorvastatin 20mg","Losartán 50mg":"Losartan 50mg","Vitamina C 1000mg":"Vitamin C 1000mg","Vitamina D 1000UI":"Vitamin D 1000IU","Anticonceptivos orales":"Oral Contraceptives","Taxi / Rideshare km":"Taxi / Rideshare km","Servicio de Bus":"Bus Service","Vuelo Doméstico":"Domestic Flight","Vuelo Internacional":"International Flight","Peaje Autopista":"Highway Toll","Servicio de Metro":"Metro Service","Transporte de Carga":"Freight Transport","Mensajería Express":"Express Delivery","Bicicletas Compartidas":"Bike Sharing","Patinetas Eléctricas":"Electric Scooters","Cuenta de Ahorros":"Savings Account","Tarjeta de Crédito":"Credit Card","Crédito de Consumo":"Consumer Loan","Crédito Hipotecario":"Mortgage Loan","Comisión Transferencia":"Transfer Fee","CDT / Depósito a Plazo":"Time Deposit","Nómina Empresarial":"Corporate Payroll","Billetera Digital":"Digital Wallet","Smartphone Gama Media":"Mid-Range Smartphone","Smartphone Gama Alta":"High-End Smartphone","Laptop 14 pulgadas":"14-inch Laptop","Tablet 10 pulgadas":"10-inch Tablet","Smart TV 55 pulgadas":"55-inch Smart TV","Auriculares Bluetooth":"Bluetooth Headphones","Licencia Software Ofimática":"Office Software License","Servicio Cloud Básico":"Basic Cloud Service","Consulta Médica General":"General Medical Consultation","Consulta Médica Especialista":"Specialist Consultation","Examen de Laboratorio":"Laboratory Test","Radiografía":"X-Ray","Resonancia Magnética":"MRI Scan","Cirugía Ambulatoria":"Outpatient Surgery","Fisioterapia Sesión":"Physiotherapy Session","Plan de Salud Prepagada":"Prepaid Health Plan"},
+  },
+};
+
+// ─── DATA GENERATION ─────────────────────────────────────────────────────────
 function seeded(seed){let s=seed;return()=>{s=(s*1664525+1013904223)&0xffffffff;return Math.abs(s)/0x7fffffff;};}
 
 function getCompanies(market,product,country){
@@ -383,10 +349,10 @@ function detectPatterns(data,country,t){
   data.filter(d=>d.price<avg*0.75).forEach(d=>{alerts.push(mk("PRECIOS PREDATORIOS","ALTA","⚡",C.purple,t.patternDescs["PRECIOS PREDATORIOS"](d.company,(((avg-d.price)/avg)*100).toFixed(1)),t.probLabels.med35));score+=20;});
   if(top2>80&&data.length>=3){alerts.push(mk("CONCENTRACIÓN","MEDIA","🔶","#f97316",t.patternDescs["CONCENTRACIÓN"](top2),t.probLabels.med30c));score+=10;}
   let level,color;
-  if(score>=55){level=t.riskLabels?.critical||"CRÍTICO";color=C.red;}
-  else if(score>=35){level=t.riskLabels?.high||"ALTO";color=C.amber;}
-  else if(score>=15){level=t.riskLabels?.medium||"MEDIO";color="#d97706";}
-  else{level=t.riskLabels?.low||"BAJO";color=C.green;}
+  if(score>=55){level=t.riskLabels.critical;color=C.red;}
+  else if(score>=35){level=t.riskLabels.high;color=C.amber;}
+  else if(score>=15){level=t.riskLabels.medium;color="#d97706";}
+  else{level=t.riskLabels.low;color=C.green;}
   return{alerts,risk:{level,score,color},variancePct,changePct,avg,max,min};
 }
 
@@ -396,6 +362,90 @@ const SectionTitle=({children})=><div style={{display:"flex",alignItems:"center"
 function StatCard({icon,label,value,sub,color,delay=0}){return<div style={{background:C.card,border:`1px solid ${color}33`,borderRadius:12,padding:"16px 18px",boxShadow:"0 1px 4px #0001",animation:`fadeUp .5s ease ${delay}s both`}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}><span style={{fontSize:10,color:C.t3,letterSpacing:.8,textTransform:"uppercase"}}>{label}</span><span style={{fontSize:18}}>{icon}</span></div><div style={{fontSize:22,fontWeight:800,color,fontFamily:"'Syne',sans-serif",marginBottom:3}}>{value}</div>{sub&&<div style={{fontSize:11,color:C.t3}}>{sub}</div>}</div>;}
 function CTip({children,color}){const col=color||C.gold;return<div style={{background:col+"11",border:`1px solid ${col}33`,borderRadius:8,padding:"10px 14px",fontSize:12,color:col,lineHeight:1.6,marginBottom:12}}>{children}</div>;}
 function CTooltip({active,payload,label,unit}){if(!active||!payload?.length)return null;return<div style={{background:C.surface,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"10px 14px",fontSize:12,boxShadow:"0 4px 12px #0002"}}><div style={{color:C.t2,marginBottom:6,fontWeight:600}}>{label}</div>{payload.map((p,i)=><div key={i} style={{color:p.color||C.gold,marginBottom:2}}>{p.name}: <b>{p.value?.toLocaleString()}</b>{unit&&` / ${unit}`}</div>)}</div>;}
+
+// ─── TUTORIAL ─────────────────────────────────────────────────────────────────
+function Tutorial({t,onClose}){
+  const [step,setStep]=useState(0);
+  const steps=t.tutorialSteps;
+  return<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(6,9,16,0.9)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+    <div style={{background:C.surface,border:`2px solid ${C.gold}`,borderRadius:16,padding:32,maxWidth:400,width:"100%",textAlign:"center",boxShadow:"0 20px 60px #0006"}}>
+      <div style={{fontSize:48,marginBottom:8}}>{steps[step].icon}</div>
+      <div style={{fontSize:10,color:C.t4,letterSpacing:1,marginBottom:4}}>{t.tutorialSubtitle} · {step+1}/{steps.length}</div>
+      <div style={{fontFamily:"'Syne',sans-serif",fontSize:20,fontWeight:800,color:C.gold,marginBottom:12}}>{steps[step].title}</div>
+      <p style={{color:C.t2,fontSize:14,lineHeight:1.7,marginBottom:24}}>{steps[step].desc}</p>
+      <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:24}}>
+        {steps.map((_,i)=><div key={i} style={{width:i===step?24:8,height:8,borderRadius:4,background:i===step?C.gold:C.border,transition:"all .3s"}}/>)}
+      </div>
+      {step<steps.length-1
+        ?<button onClick={()=>setStep(s=>s+1)} style={{width:"100%",background:C.gold,border:"none",borderRadius:10,padding:"14px",color:"#fff",fontSize:14,fontWeight:800,fontFamily:"inherit",cursor:"pointer"}}>
+          {t.tutorialSteps[step+1].title} →
+        </button>
+        :<button onClick={onClose} style={{width:"100%",background:C.green,border:"none",borderRadius:10,padding:"14px",color:"#fff",fontSize:14,fontWeight:800,fontFamily:"inherit",cursor:"pointer"}}>
+          {t.tutorialBtn}
+        </button>
+      }
+      {step>0&&<button onClick={()=>setStep(s=>s-1)} style={{marginTop:10,background:"transparent",border:"none",color:C.t3,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>← Anterior</button>}
+    </div>
+  </div>;
+}
+
+// ─── LOGIN GATE ───────────────────────────────────────────────────────────────
+function LoginGate({t,onLogin}){
+  const [email,setEmail]=useState("");
+  const [error,setError]=useState("");
+  const validate=(e)=>{
+    if(!e.includes("@")||!e.includes(".")){setError("Por favor ingresa un correo válido");return;}
+    onLogin(e);
+  };
+  return<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(6,9,16,0.9)",zIndex:1500,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+    <div style={{background:C.surface,border:`2px solid ${C.gold}`,borderRadius:16,padding:32,maxWidth:400,width:"100%",textAlign:"center",boxShadow:"0 20px 60px #0006"}}>
+      <div style={{fontSize:40,marginBottom:12}}>⚖️</div>
+      <div style={{fontFamily:"'Syne',sans-serif",fontSize:20,fontWeight:800,color:C.gold,marginBottom:8}}>{t.loginTitle}</div>
+      <p style={{color:C.t2,fontSize:13,lineHeight:1.7,marginBottom:24}}>{t.loginDesc}</p>
+      <input value={email} onChange={e=>{setEmail(e.target.value);setError("");}}
+        placeholder={t.emailPlaceholder} type="email"
+        style={{width:"100%",boxSizing:"border-box",background:C.bg,border:`1px solid ${error?C.red:C.borderHi}`,borderRadius:8,padding:"12px 16px",color:C.t1,fontSize:14,fontFamily:"inherit",outline:"none",marginBottom:8}}/>
+      {error&&<div style={{color:C.red,fontSize:12,marginBottom:8}}>{error}</div>}
+      <button onClick={()=>validate(email)} style={{width:"100%",background:C.gold,border:"none",borderRadius:10,padding:"14px",color:"#fff",fontSize:14,fontWeight:800,fontFamily:"inherit",cursor:"pointer",marginBottom:16}}>
+        {t.loginBtn}
+      </button>
+      <p style={{color:C.t4,fontSize:11}}>
+        {t.alreadyHave} <span style={{color:C.gold}}>andrea9522@gmail.com</span>
+      </p>
+    </div>
+  </div>;
+}
+
+// ─── PAYWALL ──────────────────────────────────────────────────────────────────
+function Paywall({t,lang,onClose}){
+  return<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(6,9,16,0.9)",zIndex:1800,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+    <div style={{background:C.surface,border:`2px solid ${C.gold}`,borderRadius:16,padding:28,maxWidth:420,width:"100%",textAlign:"center",boxShadow:"0 20px 60px #0006",maxHeight:"90vh",overflowY:"auto"}}>
+      <div style={{fontSize:40,marginBottom:8}}>🔐</div>
+      <div style={{fontFamily:"'Syne',sans-serif",fontSize:20,fontWeight:800,color:C.gold,marginBottom:6}}>{t.paywallTitle}</div>
+      <p style={{color:C.t2,fontSize:13,lineHeight:1.7,marginBottom:16}}>{t.paywallDesc}</p>
+      <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:16,marginBottom:16,textAlign:"left"}}>
+        {t.paywallFeatures.map((f,i)=><div key={i} style={{fontSize:13,color:C.t1,marginBottom:6}}>{f}</div>)}
+        <div style={{fontSize:18,fontWeight:800,color:C.gold,marginTop:10,textAlign:"center"}}>{t.paywallPrice}</div>
+      </div>
+      <a href="https://checkout.bold.co/payment/LNK_1IOUQ6TUL7" target="_blank" rel="noreferrer"
+        style={{display:"block",background:C.gold,borderRadius:10,padding:"13px",color:"#fff",fontSize:14,fontWeight:800,textDecoration:"none",marginBottom:8}}>
+        {t.boldBtn}
+      </a>
+      <a href="https://www.paypal.com/paypalme/AndreaBorda/49" target="_blank" rel="noreferrer"
+        style={{display:"block",background:"#003087",borderRadius:10,padding:"13px",color:"#fff",fontSize:14,fontWeight:800,textDecoration:"none",marginBottom:8}}>
+        {t.paypalBtn}
+      </a>
+      <a href="https://andreamuse555.gumroad.com/l/mwipyd" target="_blank" rel="noreferrer"
+        style={{display:"block",background:"#ff90e8",borderRadius:10,padding:"13px",color:"#000",fontSize:14,fontWeight:800,textDecoration:"none",marginBottom:14}}>
+        {t.gumroadBtn}
+      </a>
+      <button onClick={onClose} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:8,padding:"10px 20px",color:C.t3,fontSize:13,fontFamily:"inherit",cursor:"pointer",width:"100%",marginBottom:10}}>
+        {t.backBtn}
+      </button>
+      <p style={{color:C.t4,fontSize:11}}>{t.alreadyHave} <span style={{color:C.gold}}>andrea9522@gmail.com</span></p>
+    </div>
+  </div>;
+}
 
 function AlertCard({a,expanded,onToggle,t}){
   return<div style={{background:a.color+"0d",border:`1px solid ${a.color}44`,borderLeft:`3px solid ${a.color}`,borderRadius:10,marginBottom:10,overflow:"hidden"}}>
@@ -431,12 +481,7 @@ function AlertsPanel({alerts,country,emailConfig,onEmailConfig,t}){
   const save=()=>{onEmailConfig({email:emailInput});setSaved(true);setTimeout(()=>setSaved(false),2500);};
   const thresholdKeys=["a","b","c","d","e","f"];
   const thresholdColors=[C.red,C.amber,C.amber,C.blue,C.purple,"#f97316"];
-  const Toggle=({label,k,color})=><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:`1px solid ${C.border}22`}}>
-    <span style={{fontSize:12,color:C.t2}}>{label}</span>
-    <div onClick={()=>setThresholds(p=>({...p,[k]:!p[k]}))} style={{width:40,height:22,borderRadius:11,cursor:"pointer",transition:"all .2s",background:thresholds[k]?color+"44":C.border,border:`1px solid ${thresholds[k]?color:C.borderHi}`,position:"relative"}}>
-      <div style={{width:16,height:16,borderRadius:"50%",position:"absolute",top:2,left:thresholds[k]?20:2,transition:"left .2s",background:thresholds[k]?color:C.t4}}/>
-    </div>
-  </div>;
+  const Toggle=({label,k,color})=><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:`1px solid ${C.border}22`}}><span style={{fontSize:12,color:C.t2}}>{label}</span><div onClick={()=>setThresholds(p=>({...p,[k]:!p[k]}))} style={{width:40,height:22,borderRadius:11,cursor:"pointer",transition:"all .2s",background:thresholds[k]?color+"44":C.border,border:`1px solid ${thresholds[k]?color:C.borderHi}`,position:"relative"}}><div style={{width:16,height:16,borderRadius:"50%",position:"absolute",top:2,left:thresholds[k]?20:2,transition:"left .2s",background:thresholds[k]?color:C.t4}}/></div></div>;
   return<div>
     {alerts.length>0?<div style={{marginBottom:28}}>
       <SectionTitle>{t.activeAlerts} — {alerts.length} {alerts.length!==1?t.detections:t.detection}</SectionTitle>
@@ -487,26 +532,10 @@ function FilterPanel({filters,onChange,t}){
     onChange(n);
   };
   const L=({c})=><div style={{fontSize:10,color:C.t3,letterSpacing:.8,marginBottom:5,textTransform:"uppercase"}}>{c}</div>;
-  const Sel=({value,opts,k,renderLabel})=><select value={value} onChange={e=>sel(k,e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>{opts.map(o=><option key={o} value={o}>{renderLabel?renderLabel(o):o}</option>)}</select>;
   const DI=({label,val,k})=><div style={{flex:1}}><L c={label}/><input type="date" value={val} onChange={e=>sel(k,e.target.value)} style={{width:"100%",boxSizing:"border-box",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none"}}/></div>;
   const hours=Array.from({length:24},(_,i)=>String(i).padStart(2,"0"));
   const mins=["00","15","30","45"];
-  const TI=({label,val,k})=>{
-    const [h,m]=(val||"00:00").split(":");
-    return<div style={{flex:1}}>
-      <L c={label}/>
-      <div style={{display:"flex",gap:4}}>
-        <select value={h} onChange={e=>sel(k,`${e.target.value}:${m||"00"}`)}
-          style={{flex:1,background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 8px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>
-          {hours.map(hh=><option key={hh} value={hh}>{hh}h</option>)}
-        </select>
-        <select value={m||"00"} onChange={e=>sel(k,`${h||"00"}:${e.target.value}`)}
-          style={{flex:1,background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 8px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>
-          {mins.map(mm=><option key={mm} value={mm}>{mm}m</option>)}
-        </select>
-      </div>
-    </div>;
-  };
+  const TI=({label,val,k})=>{const[h,m]=(val||"00:00").split(":");return<div style={{flex:1}}><L c={label}/><div style={{display:"flex",gap:4}}><select value={h} onChange={e=>sel(k,`${e.target.value}:${m||"00"}`)} style={{flex:1,background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 8px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>{hours.map(hh=><option key={hh} value={hh}>{hh}h</option>)}</select><select value={m||"00"} onChange={e=>sel(k,`${h||"00"}:${e.target.value}`)} style={{flex:1,background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 8px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>{mins.map(mm=><option key={mm} value={mm}>{mm}m</option>)}</select></div></div>;};
   return<div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:22,marginBottom:26,boxShadow:"0 1px 4px #0001"}}>
     <SectionTitle>{t.filterTitle}</SectionTitle>
     <div style={{marginBottom:16}}>
@@ -516,29 +545,11 @@ function FilterPanel({filters,onChange,t}){
       </div>
     </div>
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))",gap:14,marginBottom:16}}>
-      <div>
-        <L c={t.country}/>
-        <select value={country} onChange={e=>sel("country",e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>
-          {Object.keys(GEO[region_group]?.countries||{}).map(c=><option key={c} value={c}>{GEO[region_group].countries[c].flag} {c}</option>)}
-        </select>
-      </div>
-      <div><L c={t.territory}/><Sel value={region} opts={regions} k="region"/></div>
-      {/* FIX #2: Market dropdown shows translated label but uses Spanish key */}
-      <div>
-        <L c={t.market}/>
-        <select value={market} onChange={e=>sel("market",e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>
-          {Object.keys(MARKETS).map(m=><option key={m} value={m}>{t.markets[m]||m}</option>)}
-        </select>
-      </div>
+      <div><L c={t.country}/><select value={country} onChange={e=>sel("country",e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>{Object.keys(GEO[region_group]?.countries||{}).map(c=><option key={c} value={c}>{GEO[region_group].countries[c].flag} {c}</option>)}</select></div>
+      <div><L c={t.territory}/><select value={region} onChange={e=>sel("region",e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>{regions.map(r=><option key={r}>{r}</option>)}</select></div>
+      <div><L c={t.market}/><select value={market} onChange={e=>sel("market",e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>{Object.keys(MARKETS).map(m=><option key={m} value={m}>{t.markets[m]||m}</option>)}</select></div>
       <div><L c={t.product}/><select value={product} onChange={e=>sel("product",e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>{products.map(p=><option key={p} value={p}>{t.products?.[p]||p}</option>)}</select></div>
-      {/* FIX #2: Company dropdown always uses real company names */}
-      <div>
-        <L c={t.company}/>
-        <select value={company} onChange={e=>sel("company",e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>
-          <option value={t.allCompanies}>{t.allCompaniesLabel}</option>
-          {companies.map(c=><option key={c} value={c}>{c}</option>)}
-        </select>
-      </div>
+      <div><L c={t.company}/><select value={company} onChange={e=>sel("company",e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}><option value={t.allCompanies}>{t.allCompaniesLabel}</option>{companies.map(c=><option key={c} value={c}>{c}</option>)}</select></div>
     </div>
     <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
       <DI label={t.dateFrom} val={dateFrom} k="dateFrom"/>
@@ -570,32 +581,12 @@ function ComparisonStats({data,selectedCompany,analysis,unit,t}){
       </div>
       <table style={{width:"100%",borderCollapse:"collapse"}}>
         <thead><tr style={{borderBottom:`1px solid ${C.border}`,background:C.bg}}>{t.tableHeaders.map(h=><th key={h} style={{padding:"9px 14px",textAlign:"left",fontSize:9,color:C.t3,fontWeight:700,letterSpacing:.8}}>{h}</th>)}</tr></thead>
-        <tbody>{sorted.map((row,i)=>{
-          const chg=((row.price-row.prevPrice)/row.prevPrice)*100;
-          const dAvg=((row.price-avg)/avg)*100;
-          const isSel=row.company===selectedCompany;
-          return<tr key={row.company} style={{borderBottom:`1px solid ${C.border}22`,background:isSel?C.goldGlow:"transparent"}}>
-            <td style={{padding:"10px 14px",fontSize:13,color:C.t3,fontWeight:700}}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}`}</td>
-            <td style={{padding:"10px 14px",fontSize:13,fontWeight:700,color:isSel?C.gold:C.t1}}>{row.company}{isSel&&<span style={{fontSize:9,color:C.gold}}> ◀</span>}</td>
-            <td style={{padding:"10px 14px",fontSize:13,color:C.teal,fontWeight:700}}>{row.price.toLocaleString()}</td>
-            <td style={{padding:"10px 14px",fontSize:12,color:C.t3}}>{row.prevPrice.toLocaleString()}</td>
-            <td style={{padding:"10px 14px",fontSize:12,fontWeight:700,color:Math.abs(chg)>15?C.red:Math.abs(chg)>5?C.amber:C.green}}>{chg>0?"+":""}{chg.toFixed(1)}%</td>
-            <td style={{padding:"10px 14px",fontSize:12,fontWeight:700,color:Math.abs(dAvg)>5?C.amber:C.green}}>{dAvg>0?"+":""}{dAvg.toFixed(1)}%</td>
-            <td style={{padding:"10px 14px"}}><Badge label={`${row.marketShare}%`} color={C.blue}/></td>
-            <td style={{padding:"10px 14px"}}><Badge label={row.complaints} color={row.complaints>25?C.red:row.complaints>10?C.amber:C.green}/></td>
-          </tr>;
-        })}</tbody>
+        <tbody>{sorted.map((row,i)=>{const chg=((row.price-row.prevPrice)/row.prevPrice)*100,dAvg=((row.price-avg)/avg)*100,isSel=row.company===selectedCompany;return<tr key={row.company} style={{borderBottom:`1px solid ${C.border}22`,background:isSel?C.goldGlow:"transparent"}}><td style={{padding:"10px 14px",fontSize:13,color:C.t3,fontWeight:700}}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}`}</td><td style={{padding:"10px 14px",fontSize:13,fontWeight:700,color:isSel?C.gold:C.t1}}>{row.company}{isSel&&<span style={{fontSize:9,color:C.gold}}> ◀</span>}</td><td style={{padding:"10px 14px",fontSize:13,color:C.teal,fontWeight:700}}>{row.price.toLocaleString()}</td><td style={{padding:"10px 14px",fontSize:12,color:C.t3}}>{row.prevPrice.toLocaleString()}</td><td style={{padding:"10px 14px",fontSize:12,fontWeight:700,color:Math.abs(chg)>15?C.red:Math.abs(chg)>5?C.amber:C.green}}>{chg>0?"+":""}{chg.toFixed(1)}%</td><td style={{padding:"10px 14px",fontSize:12,fontWeight:700,color:Math.abs(dAvg)>5?C.amber:C.green}}>{dAvg>0?"+":""}{dAvg.toFixed(1)}%</td><td style={{padding:"10px 14px"}}><Badge label={`${row.marketShare}%`} color={C.blue}/></td><td style={{padding:"10px 14px"}}><Badge label={row.complaints} color={row.complaints>25?C.red:row.complaints>10?C.amber:C.green}/></td></tr>;})}</tbody>
       </table>
     </div>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
-      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:18,boxShadow:"0 1px 4px #0001"}}>
-        <div style={{fontSize:10,color:C.t3,letterSpacing:.8,marginBottom:12}}>{t.currentVsPrev}</div>
-        <ResponsiveContainer width="100%" height={190}><BarChart data={barData} barGap={3}><CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false}/><XAxis dataKey="name" tick={{fill:C.t3,fontSize:9}} axisLine={false} tickLine={false}/><YAxis tick={{fill:C.t3,fontSize:9}} axisLine={false} tickLine={false} tickFormatter={v=>v.toLocaleString()}/><Tooltip content={<CTooltip unit={unit}/>}/><Bar dataKey="prevPrice" fill={C.border} name={t.prev} radius={[3,3,0,0]}/><Bar dataKey="price" fill={C.gold} name={t.current} radius={[3,3,0,0]}/></BarChart></ResponsiveContainer>
-      </div>
-      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:18,boxShadow:"0 1px 4px #0001"}}>
-        <div style={{fontSize:10,color:C.t3,letterSpacing:.8,marginBottom:12}}>{t.deviationVsAvg}</div>
-        <ResponsiveContainer width="100%" height={190}><BarChart data={barData}><CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false}/><XAxis dataKey="name" tick={{fill:C.t3,fontSize:9}} axisLine={false} tickLine={false}/><YAxis tick={{fill:C.t3,fontSize:9}} axisLine={false} tickLine={false} tickFormatter={v=>`${v}%`}/><Tooltip formatter={v=>[`${v}%`,t.devFromAvg]}/><ReferenceLine y={0} stroke={C.t3} strokeDasharray="4 4"/><Bar dataKey="diff" fill={C.teal} name={t.devFromAvg} radius={[3,3,0,0]}/></BarChart></ResponsiveContainer>
-      </div>
+      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:18,boxShadow:"0 1px 4px #0001"}}><div style={{fontSize:10,color:C.t3,letterSpacing:.8,marginBottom:12}}>{t.currentVsPrev}</div><ResponsiveContainer width="100%" height={190}><BarChart data={barData} barGap={3}><CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false}/><XAxis dataKey="name" tick={{fill:C.t3,fontSize:9}} axisLine={false} tickLine={false}/><YAxis tick={{fill:C.t3,fontSize:9}} axisLine={false} tickLine={false} tickFormatter={v=>v.toLocaleString()}/><Tooltip content={<CTooltip unit={unit}/>}/><Bar dataKey="prevPrice" fill={C.border} name={t.prev} radius={[3,3,0,0]}/><Bar dataKey="price" fill={C.gold} name={t.current} radius={[3,3,0,0]}/></BarChart></ResponsiveContainer></div>
+      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:18,boxShadow:"0 1px 4px #0001"}}><div style={{fontSize:10,color:C.t3,letterSpacing:.8,marginBottom:12}}>{t.deviationVsAvg}</div><ResponsiveContainer width="100%" height={190}><BarChart data={barData}><CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false}/><XAxis dataKey="name" tick={{fill:C.t3,fontSize:9}} axisLine={false} tickLine={false}/><YAxis tick={{fill:C.t3,fontSize:9}} axisLine={false} tickLine={false} tickFormatter={v=>`${v}%`}/><Tooltip formatter={v=>[`${v}%`,t.devFromAvg]}/><ReferenceLine y={0} stroke={C.t3} strokeDasharray="4 4"/><Bar dataKey="diff" fill={C.teal} name={t.devFromAvg} radius={[3,3,0,0]}/></BarChart></ResponsiveContainer></div>
     </div>
     <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:18,marginBottom:18,boxShadow:"0 1px 4px #0001"}}>
       <div style={{fontSize:10,color:C.t3,letterSpacing:.8,marginBottom:12}}>{t.historicalEvolution}</div>
@@ -623,18 +614,10 @@ function RiskPanel({analysis,onGoToAlerts,country,t}){
       <div><span style={{fontSize:9,color:C.t3,letterSpacing:.8}}>{t.authority}: </span><span style={{fontSize:11,color:C.teal,fontWeight:700}}>{lf.authority}</span></div>
       <div><span style={{fontSize:9,color:C.t3,letterSpacing:.8}}>{t.legalFrame}: </span><span style={{fontSize:11,color:C.gold,fontWeight:600}}>{lf.law}</span></div>
     </div>
-    {alerts.length>0?<div>{alerts.map((a,i)=><div key={i} style={{background:a.color+"0d",border:`1px solid ${a.color}44`,borderLeft:`3px solid ${a.color}`,borderRadius:10,padding:"13px 18px",marginBottom:10,display:"flex",alignItems:"center",gap:12}}>
-      <span style={{fontSize:20}}>{a.icon}</span>
-      <div style={{flex:1}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><span style={{color:a.color,fontWeight:700,fontSize:13}}>{a.type}</span><Badge label={a.sev} color={a.color}/><Badge label={a.probability} color={a.color}/></div>
-        <p style={{color:C.t2,fontSize:12,margin:0,lineHeight:1.5}}>{a.desc}</p>
-      </div>
-      <button onClick={onGoToAlerts} style={{background:"transparent",border:`1px solid ${a.color}44`,borderRadius:7,padding:"6px 12px",color:a.color,fontSize:11,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap"}}>{t.seeDetail}</button>
-    </div>)}</div>:<CTip color={C.green}>✅ {t.noAlerts}</CTip>}
+    {alerts.length>0?<div>{alerts.map((a,i)=><div key={i} style={{background:a.color+"0d",border:`1px solid ${a.color}44`,borderLeft:`3px solid ${a.color}`,borderRadius:10,padding:"13px 18px",marginBottom:10,display:"flex",alignItems:"center",gap:12}}><span style={{fontSize:20}}>{a.icon}</span><div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><span style={{color:a.color,fontWeight:700,fontSize:13}}>{a.type}</span><Badge label={a.sev} color={a.color}/><Badge label={a.probability} color={a.color}/></div><p style={{color:C.t2,fontSize:12,margin:0,lineHeight:1.5}}>{a.desc}</p></div><button onClick={onGoToAlerts} style={{background:"transparent",border:`1px solid ${a.color}44`,borderRadius:7,padding:"6px 12px",color:a.color,fontSize:11,fontFamily:"inherit",cursor:"pointer",whiteSpace:"nowrap"}}>{t.seeDetail}</button></div>)}</div>:<CTip color={C.green}>✅ {t.noAlerts}</CTip>}
   </div>;
 }
 
-// AI Analysis - smart local legal opinion generator (no external API)
 function AIAnalysis({data,analysis,product,country,region,unit,t}){
   const [text,setText]=useState("");
   const [loading,setLoading]=useState(false);
@@ -649,165 +632,27 @@ function AIAnalysis({data,analysis,product,country,region,unit,t}){
     const cheapest=sorted[0];
     const mostExp=sorted[sorted.length-1];
     const allUp=data.every(d=>d.price>d.prevPrice);
-
     if(isES){
-      let opinion=`DICTAMEN TÉCNICO-JURÍDICO\n`;
-      opinion+=`Producto: ${product} | Territorio: ${region} | Jurisdicción: ${country}\n`;
-      opinion+=`Autoridad competente: ${lf.authority}\n`;
-      opinion+=`Marco legal: ${lf.law}\n\n`;
-
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      opinion+=`1. DIAGNÓSTICO ECONÓMICO DEL MERCADO\n`;
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      opinion+=`El mercado de ${product} en ${region} presenta un precio promedio de ${Math.round(avg).toLocaleString()} por ${unit}, con una dispersión entre competidores del ${variancePct.toFixed(2)}%. `;
-      if(variancePct<1){
-        opinion+=`Esta convergencia extrema de precios (inferior al 1%) entre ${data.length} actores del mercado constituye una anomalía estadística que no puede explicarse exclusivamente por factores estructurales de costos homogéneos.\n\n`;
-      } else {
-        opinion+=`La variación de precios entre competidores se sitúa en niveles ${variancePct<5?"bajos":"moderados"}, lo que ${variancePct<3?"podría indicar comportamiento coordinado":"es consistente con un mercado competitivo normal"}.\n\n`;
-      }
-      opinion+=`Durante el período analizado, el precio ${allUp?"aumentó en todos los actores simultáneamente un "+changePct.toFixed(1)+"%":"presentó variaciones diferenciadas entre competidores"}. `;
-      opinion+=`El actor con menor precio es ${cheapest?.company} (${cheapest?.price.toLocaleString()} / ${unit}) y el de mayor precio es ${mostExp?.company} (${mostExp?.price.toLocaleString()} / ${unit}).\n\n`;
-
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      opinion+=`2. PRÁCTICAS RESTRICTIVAS IDENTIFICADAS\n`;
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      if(alerts.length===0){
-        opinion+=`No se identificaron patrones de conducta anticompetitiva en el período analizado. El comportamiento de precios es consistente con una competencia normal en el mercado relevante.\n\n`;
-      } else {
-        alerts.forEach((a,i)=>{
-          opinion+=`${i+1}. ${a.type}\n`;
-          opinion+=`   Base legal: ${lf.rules?.[Object.keys(lf.rules).find(k=>t.patternTypes[k]===a.type)]||a.legal}\n`;
-          opinion+=`   Descripción: ${a.desc}\n`;
-          opinion+=`   Probabilidad de infracción: ${a.probability}\n\n`;
-        });
-      }
-
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      opinion+=`3. RECOMENDACIONES DE INVESTIGACIÓN\n`;
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      if(alerts.length===0){
-        opinion+=`Se recomienda mantener monitoreo periódico del mercado y ampliar el análisis a un período más extenso para detectar patrones de largo plazo.\n\n`;
-      } else {
-        opinion+=`Se recomienda a ${lf.authority}:\n\n`;
-        opinion+=`a) Iniciar una investigación preliminar para verificar la existencia de comunicaciones, acuerdos o prácticas concertadas entre los actores del mercado.\n\n`;
-        opinion+=`b) Solicitar a las empresas involucradas (${data.map(d=>d.company).join(", ")}) información sobre su estructura de costos, márgenes y política comercial.\n\n`;
-        opinion+=`c) Revisar actas de asociaciones gremiales del sector ${product} en ${region} durante el período analizado.\n\n`;
-        opinion+=`d) Ampliar el análisis comparativo con datos históricos de al menos 24 meses para identificar patrones estructurales.\n\n`;
-      }
-
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      opinion+=`4. NIVEL DE RIESGO Y SANCIONES APLICABLES\n`;
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      opinion+=`Nivel de riesgo detectado: ${risk.level} (Score: ${risk.score}/100)\n\n`;
-      opinion+=`En caso de confirmarse las conductas identificadas, las sanciones aplicables bajo ${lf.law} son:\n\n`;
-      opinion+=`• ${lf.sanction}\n\n`;
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      opinion+=`Análisis generado por Fair Compes · ${new Date().toLocaleDateString("es-CO")}`;
-      return opinion;
-    } else {
-      let opinion=`TECHNICAL-LEGAL OPINION\n`;
-      opinion+=`Product: ${displayProduct} | Territory: ${region} | Jurisdiction: ${country}\n`;
-      opinion+=`Competent Authority: ${lf.authority}\n`;
-      opinion+=`Legal Framework: ${lf.law}\n\n`;
-
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      opinion+=`1. ECONOMIC DIAGNOSIS\n`;
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      opinion+=`The ${displayProduct} market in ${region} shows an average price of ${Math.round(avg).toLocaleString()} per ${unit}, with a price dispersion among competitors of ${variancePct.toFixed(2)}%. `;
-      if(variancePct<1){
-        opinion+=`This extreme price convergence (below 1%) among ${data.length} market actors constitutes a statistical anomaly that cannot be explained solely by homogeneous cost structures.\n\n`;
-      } else {
-        opinion+=`The price variation among competitors is at ${variancePct<5?"low":"moderate"} levels, which ${variancePct<3?"may indicate coordinated behavior":"is consistent with a normally competitive market"}.\n\n`;
-      }
-      opinion+=`During the analyzed period, prices ${allUp?"increased simultaneously across all actors by "+changePct.toFixed(1)+"%":"showed differentiated variations among competitors"}. `;
-      opinion+=`The lowest-priced actor is ${cheapest?.company} (${cheapest?.price.toLocaleString()} / ${unit}) and the highest is ${mostExp?.company} (${mostExp?.price.toLocaleString()} / ${unit}).\n\n`;
-
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      opinion+=`2. IDENTIFIED RESTRICTIVE PRACTICES\n`;
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      if(alerts.length===0){
-        opinion+=`No anticompetitive conduct patterns were identified in the analyzed period. Price behavior is consistent with normal competition in the relevant market.\n\n`;
-      } else {
-        alerts.forEach((a,i)=>{
-          opinion+=`${i+1}. ${a.type}\n`;
-          opinion+=`   Legal basis: ${lf.rules?.[Object.keys(lf.rules).find(k=>t.patternTypes[k]===a.type)]||a.legal}\n`;
-          opinion+=`   Description: ${a.desc}\n`;
-          opinion+=`   Probability of infringement: ${a.probability}\n\n`;
-        });
-      }
-
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      opinion+=`3. INVESTIGATION RECOMMENDATIONS\n`;
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      if(alerts.length===0){
-        opinion+=`It is recommended to maintain periodic market monitoring and extend the analysis to a longer period to detect long-term patterns.\n\n`;
-      } else {
-        opinion+=`It is recommended that ${lf.authority}:\n\n`;
-        opinion+=`a) Initiate a preliminary investigation to verify the existence of communications, agreements or concerted practices among market actors.\n\n`;
-        opinion+=`b) Request from the involved companies (${data.map(d=>d.company).join(", ")}) information on their cost structure, margins and commercial policy.\n\n`;
-        opinion+=`c) Review minutes of industry associations in the ${displayProduct} sector in ${region} during the analyzed period.\n\n`;
-        opinion+=`d) Extend the comparative analysis with historical data of at least 24 months to identify structural patterns.\n\n`;
-      }
-
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      opinion+=`4. RISK LEVEL AND APPLICABLE SANCTIONS\n`;
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      opinion+=`Detected risk level: ${risk.level} (Score: ${risk.score}/100)\n\n`;
-      opinion+=`Should the identified conduct be confirmed, sanctions applicable under ${lf.law} are:\n\n`;
-      opinion+=`• ${lf.sanction}\n\n`;
-      opinion+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      opinion+=`Analysis generated by Fair Compes · ${new Date().toLocaleDateString("en-US")}`;
-      return opinion;
-    }
-  };
-
-  const run=()=>{
-    if(!data.length)return;
-    setLoading(true);setText("");
-    setTimeout(()=>{
-      const opinion=generateLocalOpinion();
-      setText(opinion);
-      setLoading(false);
-    },1500);
-  };
-
-  return<div>
-    <SectionTitle>{t.aiAnalysis}</SectionTitle>
-    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:22,marginBottom:20,boxShadow:"0 1px 4px #0001"}}>
-      <div style={{background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"10px 14px",marginBottom:16,display:"flex",gap:16,flexWrap:"wrap"}}>
-        <div><span style={{fontSize:9,color:C.t3,letterSpacing:.8}}>{t.jurisdiction}: </span><span style={{fontSize:11,color:C.teal,fontWeight:700}}>{country}</span></div>
-        <div><span style={{fontSize:9,color:C.t3,letterSpacing:.8}}>{t.authority}: </span><span style={{fontSize:11,color:C.gold,fontWeight:700}}>{lf.authority}</span></div>
-        <div><span style={{fontSize:9,color:C.t3,letterSpacing:.8}}>{t.legalFrame}: </span><span style={{fontSize:11,color:C.t2}}>{lf.law}</span></div>
-      </div>
-      <p style={{color:C.t2,fontSize:13,lineHeight:1.7,margin:"0 0 18px"}}>{t.aiDesc}</p>
-      <button onClick={run} disabled={loading} style={{background:loading?C.border:C.gold,border:"none",borderRadius:8,padding:"12px 26px",color:loading?C.t3:"#fff",fontSize:13,fontWeight:800,fontFamily:"inherit",cursor:loading?"wait":"pointer",display:"flex",alignItems:"center",gap:10,transition:"all .2s"}}>
-        {loading?<><span style={{display:"flex",gap:4}}><Dot delay={0}/><Dot delay={.2}/><Dot delay={.4}/></span>{t.analyzing}…</>:t.generateDictum}
-      </button>
-    </div>
-    {text&&<div style={{background:C.card,border:`1px solid ${C.gold}44`,borderRadius:12,padding:22,animation:"fadeUp .4s ease",boxShadow:"0 1px 4px #0001"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingBottom:14,borderBottom:`1px solid ${C.border}`}}>
-        <span style={{fontSize:18}}>⚖️</span>
-        <span style={{fontSize:11,color:C.gold,fontWeight:700,letterSpacing:1}}>{t.dictum} — {displayProduct} / {region}, {country}</span>
-      </div>
-      <div style={{color:C.t1,fontSize:13,lineHeight:1.9,whiteSpace:"pre-wrap"}}>{text}</div>
-    </div>}
-  </div>;
-}
-
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
-export default function App(){
-  const [lang,setLang]=useState("es");
-  const t=T[lang];
-  const [tab,setTab]=useState("dashboard");
-  const [emailConfig,setEmailConfig]=useState({email:""});
-  const [filters,setFilters]=useState({
-    region_group:"América Latina",country:"Colombia",region:"Bogotá",
-    market:"Energía",product:"Gasolina Regular",company:"Todas",
-    dateFrom:"2026-04-01",dateTo:"2026-05-20",hourFrom:"00:00",hourTo:"23:59",
-  });
-
-  const companies=useMemo(()=>getCompanies(filters.market,filters.product,filters.country),[filters.market,filters.product,filters.country]);
-  const allData=useMemo(()=>generateData(filters.product,companies,filters.country,filters.region),[filters.product,companies,filters.country,filters.region]);
-
-  // FIX #2: Compare against both ES and EN allCompanies value
-  const di
+      let o=`DICTAMEN TÉCNICO-JURÍDICO\n`;
+      o+=`Producto: ${product} | Territorio: ${region} | Jurisdicción: ${country}\n`;
+      o+=`Autoridad competente: ${lf.authority}\n`;
+      o+=`Marco legal: ${lf.law}\n\n`;
+      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      o+=`1. DIAGNÓSTICO ECONÓMICO DEL MERCADO\n`;
+      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      o+=`El mercado de ${product} en ${region} presenta un precio promedio de ${Math.round(avg).toLocaleString()} por ${unit}, con una dispersión entre competidores del ${variancePct.toFixed(2)}%. `;
+      o+=variancePct<1?`Esta convergencia extrema (inferior al 1%) entre ${data.length} actores constituye una anomalía estadística que no puede explicarse por factores estructurales homogéneos.\n\n`:`La variación entre competidores es ${variancePct<5?"baja":"moderada"}, ${variancePct<3?"lo que podría indicar comportamiento coordinado":"consistente con competencia normal"}.\n\n`;
+      o+=`El actor más económico es ${cheapest?.company} (${cheapest?.price.toLocaleString()} / ${unit}) y el de mayor precio es ${mostExp?.company} (${mostExp?.price.toLocaleString()} / ${unit}). `;
+      o+=allUp?`Todos los actores incrementaron precios un ${changePct.toFixed(1)}% simultáneamente.\n\n`:`Los precios presentaron variaciones diferenciadas entre competidores.\n\n`;
+      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      o+=`2. PRÁCTICAS RESTRICTIVAS IDENTIFICADAS\n`;
+      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      if(alerts.length===0){o+=`No se identificaron patrones de conducta anticompetitiva en el período analizado.\n\n`;}
+      else{alerts.forEach((a,i)=>{o+=`${i+1}. ${a.type}\n   Base legal: ${lf.rules?.[Object.keys(lf.rules).find(k=>t.patternTypes[k]===a.type)]||a.legal}\n   Descripción: ${a.desc}\n   Probabilidad: ${a.probability}\n\n`;});}
+      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      o+=`3. RECOMENDACIONES DE INVESTIGACIÓN\n`;
+      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      if(alerts.length===0){o+=`Se recomienda mantener monitoreo periódico y ampliar el análisis a un período más extenso.\n\n`;}
+      else{o+=`Se recomienda a ${lf.authority}:\n\na) Iniciar investigación preliminar para verificar comunicaciones entre actores del mercado.\nb) Solicitar a (${data.map(d=>d.company).join(", ")}) información sobre estructura de costos y política comercial.\nc) Revisar actas de asociaciones gremiales del sector durante el período analizado.\nd) Ampliar el análisis con datos históricos de al menos 24 meses.\n\n`;}
+      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      o+=`4. NIVEL DE RIESGO Y SANCIONES APLICABLES\n`;
