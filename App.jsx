@@ -96,7 +96,7 @@ const MARKETS = {
       "default":{"Internet Hogar 100Mbps":["Operator A","Operator B","Operator C","Operator D"],"Internet Hogar 300Mbps":["Operator A","Operator B","Operator C"],"Internet Hogar 1Gbps":["Operator A","Operator B","Operator C"],"Telefonía Móvil Postpago":["Operator A","Operator B","Operator C"],"Telefonía Móvil Prepago":["Operator A","Operator B","Operator C"],"TV por Suscripción":["Operator A","Operator B","Operator C"],"Telefonía Fija":["Operator A","Operator B","Operator C"],"Roaming Internacional":["Operator A","Operator B","Operator C"],"Streaming Música":["Platform A","Platform B","Platform C"],"Streaming Video":["Platform A","Platform B","Platform C"]},
     }
   },
-  "Alimentos":{ products:["Pollo Entero","Carne de Res (kg)","Aceite Vegetal 1L","Leche 1L","Arroz 1kg","Pan Tajado","Huevos (docena)","Azúcar 1kg","Harina de Trigo 1kg","Café Molido 500g","Agua Embotellada 1.5L","Atún en lata"],
+  "Alimentos":{ products:["Pollo Entero","Carne de Res (kg)","Aceite Vegetal 1L","Leche 1L","Arroz 1kg","Pan Tajado","Huevos (docena)","Azúcar 1kg","Harina de Trigo 1kg","Café Molido 500g","Agua Embotellada 1.5L","Atún en lata","Pasta 500g","Mantequilla 250g","Queso Blanco 500g","Yogur 1L","Jugo de Naranja 1L","Tomate (kg)","Papa (kg)","Cebolla (kg)","Aguacate (kg)","Plátano (kg)","Manzana (kg)","Frijoles 500g","Lentejas 500g","Cereal 500g","Margarina 500g","Mayonesa 400g","Salsa de Tomate 400g","Chocolate en Polvo 400g"],
     companiesByCountry:{
       "Colombia":{"Pollo Entero":["Éxito","Jumbo","Carulla","D1","Ara"],"Carne de Res (kg)":["Éxito","Jumbo","Carulla","La Cabaña","Pricesmart"],"Aceite Vegetal 1L":["Éxito","Jumbo","D1","Ara"],"Leche 1L":["Éxito","Jumbo","D1","Olímpica"],"Arroz 1kg":["Éxito","Jumbo","D1","La 14"],"Pan Tajado":["Éxito","Jumbo","D1","Ara"],"Huevos (docena)":["Éxito","Jumbo","D1","Colanta"],"Azúcar 1kg":["Éxito","Jumbo","D1","Ara"],"Harina de Trigo 1kg":["Éxito","Jumbo","D1","Ara"],"Café Molido 500g":["Éxito","Jumbo","Carulla","Juan Valdez"],"Agua Embotellada 1.5L":["Éxito","Jumbo","D1","Ara"],"Atún en lata":["Éxito","Jumbo","D1","Carulla"]},
       "China":{"Pollo Entero":["JD Supermarket","Tmall","RT-Mart","Carrefour China"],"Carne de Res (kg)":["JD Supermarket","Tmall","Walmart China","Metro China"],"Aceite Vegetal 1L":["JD Supermarket","Tmall","RT-Mart","Sun Art"],"Leche 1L":["JD Supermarket","Mengniu","Yili","Bright Dairy"],"Arroz 1kg":["JD Supermarket","Tmall","RT-Mart","Hema"],"Pan Tajado":["JD Supermarket","Tmall","Breadtalk","85°C"],"Huevos (docena)":["JD Supermarket","Tmall","RT-Mart","Hema"],"Azúcar 1kg":["JD Supermarket","Tmall","RT-Mart"],"Harina de Trigo 1kg":["JD Supermarket","Tmall","RT-Mart","Sun Art"],"Café Molido 500g":["Luckin Coffee","Starbucks China","Manner","Tim Hortons China"],"Agua Embotellada 1.5L":["Nongfu Spring","Master Kong","C'estbon","Wahaha"],"Atún en lata":["JD Supermarket","Tmall","RT-Mart"]},
@@ -548,6 +548,16 @@ function FilterPanel({filters,onChange,t}){
       <div><L c={t.country}/><select value={country} onChange={e=>sel("country",e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>{Object.keys(GEO[region_group]?.countries||{}).map(c=><option key={c} value={c}>{GEO[region_group].countries[c].flag} {c}</option>)}</select></div>
       <div><L c={t.territory}/><select value={region} onChange={e=>sel("region",e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>{regions.map(r=><option key={r}>{r}</option>)}</select></div>
       <div><L c={t.market}/><select value={market} onChange={e=>sel("market",e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>{Object.keys(MARKETS).map(m=><option key={m} value={m}>{t.markets[m]||m}</option>)}</select></div>
+      {/* Custom market field */}
+      <div>
+        <L c={lang==="es"?"Mercado personalizado":"Custom market"}/>
+        <input
+          placeholder={lang==="es"?"Ej: Combustibles aviación...":"E.g: Aviation fuel..."}
+          onChange={e=>{if(e.target.value.trim())sel("customMarket",e.target.value);}}
+          style={{width:"100%",boxSizing:"border-box",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none"}}
+        />
+        <div style={{fontSize:10,color:C.t4,marginTop:4}}>{lang==="es"?"Escribe para analizar un mercado específico no listado":"Type to analyze a specific unlisted market"}</div>
+      </div>
       <div><L c={t.product}/><select value={product} onChange={e=>sel("product",e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}>{products.map(p=><option key={p} value={p}>{t.products?.[p]||p}</option>)}</select></div>
       <div><L c={t.company}/><select value={company} onChange={e=>sel("company",e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"9px 12px",color:C.t1,fontSize:12,fontFamily:"inherit",outline:"none",cursor:"pointer"}}><option value={t.allCompanies}>{t.allCompaniesLabel}</option>{companies.map(c=><option key={c} value={c}>{c}</option>)}</select></div>
     </div>
@@ -648,189 +658,4 @@ function AIAnalysis({data,analysis,product,country,region,unit,t}){
       o+=`2. PRÁCTICAS RESTRICTIVAS IDENTIFICADAS\n`;
       o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
       if(alerts.length===0){o+=`No se identificaron patrones de conducta anticompetitiva en el período analizado.\n\n`;}
-      else{alerts.forEach((a,i)=>{o+=`${i+1}. ${a.type}\n   Base legal: ${lf.rules?.[Object.keys(lf.rules).find(k=>t.patternTypes[k]===a.type)]||a.legal}\n   Descripción: ${a.desc}\n   Probabilidad: ${a.probability}\n\n`;});}
-      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      o+=`3. RECOMENDACIONES DE INVESTIGACIÓN\n`;
-      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      if(alerts.length===0){o+=`Se recomienda mantener monitoreo periódico y ampliar el análisis a un período más extenso.\n\n`;}
-      else{o+=`Se recomienda a ${lf.authority}:\n\na) Iniciar investigación preliminar para verificar comunicaciones entre actores del mercado.\nb) Solicitar a (${data.map(d=>d.company).join(", ")}) información sobre estructura de costos y política comercial.\nc) Revisar actas de asociaciones gremiales del sector durante el período analizado.\nd) Ampliar el análisis con datos históricos de al menos 24 meses.\n\n`;}
-      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      o+=`4. NIVEL DE RIESGO Y SANCIONES APLICABLES\n`;
-      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      o+=`Nivel de riesgo: ${risk.level} (Score: ${risk.score}/100)\n\nSanciones aplicables bajo ${lf.law}:\n• ${lf.sanction}\n\n`;
-      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      o+=`Análisis generado por Fair Compes · ${new Date().toLocaleDateString("es-CO")}`;
-      return o;
-    }else{
-      let o=`TECHNICAL-LEGAL OPINION\n`;
-      o+=`Product: ${displayProduct} | Territory: ${region} | Jurisdiction: ${country}\n`;
-      o+=`Competent Authority: ${lf.authority}\n`;
-      o+=`Legal Framework: ${lf.law}\n\n`;
-      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      o+=`1. ECONOMIC DIAGNOSIS\n`;
-      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      o+=`The ${displayProduct} market in ${region} shows an average price of ${Math.round(avg).toLocaleString()} per ${unit}, with ${variancePct.toFixed(2)}% dispersion among competitors. `;
-      o+=variancePct<1?`This extreme convergence (below 1%) among ${data.length} actors is a statistical anomaly not explainable by homogeneous cost structures.\n\n`:`The variation among competitors is ${variancePct<5?"low":"moderate"}, ${variancePct<3?"which may indicate coordinated behavior":"consistent with normal competition"}.\n\n`;
-      o+=`The lowest-priced actor is ${cheapest?.company} (${cheapest?.price.toLocaleString()} / ${unit}) and the highest is ${mostExp?.company} (${mostExp?.price.toLocaleString()} / ${unit}). `;
-      o+=allUp?`All actors increased prices by ${changePct.toFixed(1)}% simultaneously.\n\n`:`Prices showed differentiated variations among competitors.\n\n`;
-      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      o+=`2. IDENTIFIED RESTRICTIVE PRACTICES\n`;
-      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      if(alerts.length===0){o+=`No anticompetitive conduct patterns were identified in the analyzed period.\n\n`;}
-      else{alerts.forEach((a,i)=>{o+=`${i+1}. ${a.type}\n   Legal basis: ${lf.rules?.[Object.keys(lf.rules).find(k=>t.patternTypes[k]===a.type)]||a.legal}\n   Description: ${a.desc}\n   Probability: ${a.probability}\n\n`;});}
-      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      o+=`3. INVESTIGATION RECOMMENDATIONS\n`;
-      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      if(alerts.length===0){o+=`Maintain periodic market monitoring and extend analysis to a longer period.\n\n`;}
-      else{o+=`It is recommended that ${lf.authority}:\n\na) Initiate a preliminary investigation to verify communications among market actors.\nb) Request from (${data.map(d=>d.company).join(", ")}) their cost structure and commercial policy.\nc) Review industry association minutes during the analyzed period.\nd) Extend comparative analysis with at least 24 months of historical data.\n\n`;}
-      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      o+=`4. RISK LEVEL AND APPLICABLE SANCTIONS\n`;
-      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      o+=`Risk level: ${risk.level} (Score: ${risk.score}/100)\n\nSanctions under ${lf.law}:\n• ${lf.sanction}\n\n`;
-      o+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      o+=`Analysis generated by Fair Compes · ${new Date().toLocaleDateString("en-US")}`;
-      return o;
-    }
-  };
-
-  const run=()=>{
-    if(!data.length)return;
-    setLoading(true);setText("");
-    setTimeout(()=>{setText(generateLocalOpinion());setLoading(false);},1500);
-  };
-
-  return<div>
-    <SectionTitle>{t.aiAnalysis}</SectionTitle>
-    {/* DISCLAIMER - punto 5 */}
-    <div style={{background:"#fef3c7",border:"1px solid #f59e0b",borderLeft:"4px solid #f59e0b",borderRadius:8,padding:"12px 16px",marginBottom:16,fontSize:12,color:"#92400e",lineHeight:1.7}}>
-      {t.disclaimer}
-    </div>
-    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:22,marginBottom:20,boxShadow:"0 1px 4px #0001"}}>
-      <div style={{background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,padding:"10px 14px",marginBottom:16,display:"flex",gap:16,flexWrap:"wrap"}}>
-        <div><span style={{fontSize:9,color:C.t3,letterSpacing:.8}}>{t.jurisdiction}: </span><span style={{fontSize:11,color:C.teal,fontWeight:700}}>{country}</span></div>
-        <div><span style={{fontSize:9,color:C.t3,letterSpacing:.8}}>{t.authority}: </span><span style={{fontSize:11,color:C.gold,fontWeight:700}}>{lf.authority}</span></div>
-        <div><span style={{fontSize:9,color:C.t3,letterSpacing:.8}}>{t.legalFrame}: </span><span style={{fontSize:11,color:C.t2}}>{lf.law}</span></div>
-      </div>
-      <p style={{color:C.t2,fontSize:13,lineHeight:1.7,margin:"0 0 18px"}}>{t.aiDesc}</p>
-      <button onClick={run} disabled={loading} style={{background:loading?C.border:C.gold,border:"none",borderRadius:8,padding:"12px 26px",color:loading?C.t3:"#fff",fontSize:13,fontWeight:800,fontFamily:"inherit",cursor:loading?"wait":"pointer",display:"flex",alignItems:"center",gap:10,transition:"all .2s"}}>
-        {loading?<><span style={{display:"flex",gap:4}}><Dot delay={0}/><Dot delay={.2}/><Dot delay={.4}/></span>{t.analyzing}…</>:t.generateDictum}
-      </button>
-    </div>
-    {text&&<div style={{background:C.card,border:`1px solid ${C.gold}44`,borderRadius:12,padding:22,animation:"fadeUp .4s ease",boxShadow:"0 1px 4px #0001"}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16,paddingBottom:14,borderBottom:`1px solid ${C.border}`}}>
-        <span style={{fontSize:18}}>⚖️</span>
-        <span style={{fontSize:11,color:C.gold,fontWeight:700,letterSpacing:1}}>{t.dictum} — {displayProduct} / {region}, {country}</span>
-      </div>
-      <div style={{color:C.t1,fontSize:13,lineHeight:1.9,whiteSpace:"pre-wrap"}}>{text}</div>
-    </div>}
-  </div>;
-}
-
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
-export default function App(){
-  const [lang,setLang]=useState("es");
-  const t=T[lang];
-  const [tab,setTab]=useState("dashboard");
-  const [emailConfig,setEmailConfig]=useState({email:""});
-  const [filters,setFilters]=useState({region_group:"América Latina",country:"Colombia",region:"Bogotá",market:"Energía",product:"Gasolina Regular",company:"Todas",dateFrom:"2026-04-01",dateTo:"2026-05-20",hourFrom:"00:00",hourTo:"23:59"});
-
-  // AUTH & PAYWALL SYSTEM
-  const [searchCount,setSearchCount]=useState(0);
-  const [userEmail,setUserEmail]=useState(()=>{try{return localStorage.getItem("fc_email")||"";}catch{return "";}});
-  const [showLogin,setShowLogin]=useState(false);
-  const [showPaywall,setShowPaywall]=useState(false);
-  const [showTutorial,setShowTutorial]=useState(false);
-  const FREE_LIMIT=2;
-
-  const handleLogin=(email)=>{
-    setUserEmail(email);
-    try{localStorage.setItem("fc_email",email);}catch{}
-    setShowLogin(false);
-    setShowPaywall(true);
-  };
-
-  const handleSearch=()=>{
-    const newCount=searchCount+1;
-    setSearchCount(newCount);
-    if(newCount>FREE_LIMIT&&!userEmail){setShowLogin(true);}
-    else if(newCount>FREE_LIMIT&&userEmail){setShowPaywall(true);}
-  };
-
-  const companies=useMemo(()=>getCompanies(filters.market,filters.product,filters.country),[filters.market,filters.product,filters.country]);
-  const allData=useMemo(()=>generateData(filters.product,companies,filters.country,filters.region),[filters.product,companies,filters.country,filters.region]);
-  const displayData=useMemo(()=>{const isAll=filters.company===t.allCompanies||filters.company==="Todas"||filters.company==="All";return isAll?allData:allData.filter(d=>d.company===filters.company);},[allData,filters.company,t.allCompanies]);
-  const analysis=useMemo(()=>detectPatterns(allData,filters.country,t),[allData,filters.country,t]);
-  const unit=UNITS[filters.product]||"und";
-  const alertCount=analysis.alerts.length;
-  const countryInfo=GEO[filters.region_group]?.countries[filters.country];
-
-  const handleLangChange=(newLang)=>{const newT=T[newLang];setFilters(f=>({...f,company:newT.allCompanies}));setLang(newLang);};
-
-  return<div style={{minHeight:"100vh",background:C.bg,fontFamily:"'IBM Plex Mono','Courier New',monospace",color:C.t1}}>
-    <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=Syne:wght@700;800&display=swap');
-      @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-      @keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
-      ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#f0f4f8}::-webkit-scrollbar-thumb{background:#c2cfe0;border-radius:2px}
-      select option{background:#ffffff;color:#0f172a}
-    `}</style>
-
-    {/* MODALS */}
-    {showTutorial&&<Tutorial t={t} onClose={()=>setShowTutorial(false)}/>}
-    {showLogin&&<LoginGate t={t} onLogin={handleLogin}/>}
-    {showPaywall&&<Paywall t={t} lang={lang} onClose={()=>setShowPaywall(false)}/>}
-
-    {/* Header */}
-    <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,padding:"14px 28px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,boxShadow:"0 1px 6px #0001"}}>
-      <div style={{display:"flex",alignItems:"center",gap:14}}>
-        <div style={{width:40,height:40,borderRadius:10,background:`linear-gradient(135deg,${C.gold}22,${C.goldDim}11)`,border:`1px solid ${C.gold}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>⚖️</div>
-        <div>
-          <div style={{fontFamily:"'Syne',sans-serif",fontSize:17,fontWeight:800,color:C.gold,letterSpacing:.5}}>FAIR COMPES</div>
-          <div style={{fontSize:9,color:C.t4,letterSpacing:1.5}}>{t.appSubtitle}</div>
-        </div>
-      </div>
-      <div style={{display:"flex",alignItems:"center",gap:10}}>
-        {/* Lang toggle */}
-        <div style={{display:"flex",background:C.bg,border:`1px solid ${C.borderHi}`,borderRadius:8,overflow:"hidden"}}>
-          {["es","en"].map(l=><button key={l} onClick={()=>handleLangChange(l)} style={{background:lang===l?C.gold+"22":"transparent",border:"none",borderRight:l==="es"?`1px solid ${C.borderHi}`:"none",padding:"6px 12px",color:lang===l?C.gold:C.t3,fontSize:12,fontFamily:"inherit",cursor:"pointer",fontWeight:lang===l?700:400,transition:"all .2s"}}>{l==="es"?"🇪🇸 ES":"🇬🇧 EN"}</button>)}
-        </div>
-        {/* Tutorial button */}
-        <button onClick={()=>setShowTutorial(true)} style={{background:C.blue+"11",border:`1px solid ${C.blue}33`,borderRadius:8,padding:"6px 12px",color:C.blue,fontSize:11,fontFamily:"inherit",cursor:"pointer",fontWeight:700}}>❓ Tour</button>
-        {countryInfo&&<div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:8,padding:"6px 12px",display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:16}}>{countryInfo.flag}</span><div><div style={{fontSize:11,color:C.t1,fontWeight:700}}>{filters.country}</div><div style={{fontSize:9,color:C.t4}}>{countryInfo.currency}</div></div></div>}
-        {alertCount>0&&<div onClick={()=>setTab("alerts")} style={{background:analysis.risk.color+"15",border:`1px solid ${analysis.risk.color}44`,borderRadius:8,padding:"6px 14px",display:"flex",alignItems:"center",gap:7,cursor:"pointer"}}><span style={{width:7,height:7,borderRadius:"50%",background:analysis.risk.color,boxShadow:`0 0 8px ${analysis.risk.color}`,display:"inline-block",animation:"pulse 1.5s ease-in-out infinite"}}/><span style={{fontSize:11,color:analysis.risk.color,fontWeight:700}}>{alertCount} {alertCount!==1?t.alertsPlural:t.alerts}</span></div>}
-        <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{width:7,height:7,borderRadius:"50%",background:C.green,boxShadow:`0 0 8px ${C.green}44`,display:"inline-block"}}/><span style={{fontSize:10,color:C.t3}}>{t.live}</span></div>
-      </div>
-    </div>
-
-    {/* Tabs */}
-    <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,padding:"0 28px",display:"flex",gap:0}}>
-      {t.tabs.map((label,i)=>{const ids=["dashboard","comparison","alerts","ai"];return<button key={ids[i]} onClick={()=>setTab(ids[i])} style={{background:"transparent",border:"none",borderBottom:tab===ids[i]?`2px solid ${C.gold}`:"2px solid transparent",color:tab===ids[i]?C.gold:C.t3,padding:"12px 20px",fontSize:12,fontFamily:"inherit",cursor:"pointer",fontWeight:tab===ids[i]?700:400,transition:"all .2s",whiteSpace:"nowrap"}}>{label}</button>;})}
-    </div>
-
-    {/* Body */}
-    <div style={{maxWidth:1020,margin:"0 auto",padding:"26px 28px"}}>
-      <FilterPanel filters={filters} onChange={setFilters} t={t}/>
-
-      {/* Context pills + search counter */}
-      <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
-        {[{k:t.country,v:`${countryInfo?.flag||""} ${filters.country}`},{k:t.territory,v:filters.region},{k:t.market,v:t.markets[filters.market]||filters.market},{k:t.product,v:t.products?.[filters.product]||filters.product},{k:t.company,v:filters.company},{k:t.period,v:`${filters.dateFrom} → ${filters.dateTo}`},{k:t.schedule,v:`${filters.hourFrom} – ${filters.hourTo}`}].map(x=><div key={x.k} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:7,padding:"4px 12px",fontSize:11,boxShadow:"0 1px 2px #0001"}}><span style={{color:C.t4}}>{x.k}: </span><span style={{color:C.teal,fontWeight:700}}>{x.v}</span></div>)}
-      </div>
-
-      {/* Search counter bar */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 16px",marginBottom:20,boxShadow:"0 1px 2px #0001"}}>
-        <div style={{fontSize:12,color:C.t2}}>
-          {t.freeSearches}: <span style={{fontWeight:800,color:searchCount>=FREE_LIMIT?C.red:C.green}}>{Math.max(0,FREE_LIMIT-searchCount)}/{FREE_LIMIT}</span>
-          {userEmail&&<span style={{marginLeft:12,color:C.teal,fontSize:11}}>✓ {userEmail}</span>}
-        </div>
-        <button onClick={handleSearch} style={{background:C.gold,border:"none",borderRadius:8,padding:"8px 18px",color:"#fff",fontSize:12,fontWeight:800,fontFamily:"inherit",cursor:"pointer"}}>
-          {t.searchBtn}
-        </button>
-      </div>
-
-      {tab==="dashboard"&&<><RiskPanel analysis={analysis} onGoToAlerts={()=>setTab("alerts")} country={filters.country} t={t}/><div style={{marginTop:28}}><ComparisonStats data={displayData} selectedCompany={filters.company} analysis={analysis} unit={unit} t={t}/></div></>}
-      {tab==="comparison"&&<ComparisonStats data={allData} selectedCompany={filters.company} analysis={analysis} unit={unit} t={t}/>}
-      {tab==="alerts"&&<AlertsPanel alerts={analysis.alerts} country={filters.country} emailConfig={emailConfig} onEmailConfig={setEmailConfig} t={t}/>}
-      {tab==="ai"&&<AIAnalysis data={allData} analysis={analysis} product={filters.product} country={filters.country} region={filters.region} unit={unit} t={t}/>}
-    </div>
-  </div>;
-  }
+      el
