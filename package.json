@@ -1,6 +1,7 @@
 {
   "name": "fair-compes",
   "version": "1.0.0",
+  "homepage": "https://andreacborda.github.io/Fair-Compes/",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",
