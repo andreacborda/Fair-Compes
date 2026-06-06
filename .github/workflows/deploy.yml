@@ -25,7 +25,8 @@ jobs:
     - name: Deploy to Surge
       run: |
         npm install -g surge
+        echo ${{ secrets.SURGE_EMAIL }} > ~/.netrc
+        echo "machine surge.sh" >> ~/.netrc
+        echo "login ${{ secrets.SURGE_EMAIL }}" >> ~/.netrc
+        echo "password ${{ secrets.SURGE_TOKEN }}" >> ~/.netrc
         surge --project ./dist --domain fair-compes-app.surge.sh
-      env:
-        SURGE_LOGIN: ${{ secrets.SURGE_EMAIL }}
-        SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
