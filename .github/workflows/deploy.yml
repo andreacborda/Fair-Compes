@@ -23,4 +23,9 @@ jobs:
       run: npm run build
     
     - name: Deploy to Surge
-      run: npx surge dist --domain fair-compes-app.surge.sh --token ${{ secrets.SURGE_TOKEN }} --email ${{ secrets.SURGE_EMAIL }}
+      run: |
+  npm install -g surge
+  surge --project ./dist --domain fair-compes-app.surge.sh
+env:
+  SURGE_LOGIN: ${{ secrets.SURGE_EMAIL }}
+  SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
